@@ -7,6 +7,7 @@ import org.hcjf.layers.storage.StorageAccessException;
 import org.hcjf.layers.storage.StorageSession;
 import org.hcjf.layers.storage.actions.*;
 import org.hcjf.layers.storage.cassandra.actions.CassandraInsert;
+import org.hcjf.layers.storage.cassandra.actions.CassandraSelect;
 import org.hcjf.names.Naming;
 import org.hcjf.properties.*;
 import org.hcjf.utils.Introspection;
@@ -33,13 +34,72 @@ public class CassandraStorageSession extends StorageSession {
         this.layer = layer;
     }
 
-    /**
-     *
-     * @param query
-     * @return
-     */
-    private List<Row> executeQuery(Query query) {
+    public <R extends org.hcjf.layers.storage.actions.ResultSet> R executeQuery(
+            Query query, String cqlStatement, List<Object> values, Class resultType) throws StorageAccessException {
+        PreparedStatement statement = session.prepare(cqlStatement);
+        com.datastax.driver.core.ResultSet cassandraResultSet =
+                session.execute(statement.bind(values.toArray()));
 
+        Set<Row> rows = query.evaluate(cassandraResultSet.all(), new Query.Consumer<Row>() {
+
+            @Override
+            public <R> R get(Row row, String fieldName) {
+                return (R) row.getObject(normalizeName(fieldName));
+            }
+
+        });
+
+        org.hcjf.layers.storage.actions.ResultSet result;
+        if(resultType != null) {
+            List<Object> instances = new ArrayList<>();
+            Object instance;
+            Map<String, Introspection.Setter> setters;
+            for (Row row : rows) {
+                try {
+                    instance = resultType.newInstance();
+                } catch (Exception e) {
+                    throw new StorageAccessException("");
+                }
+
+                setters = Introspection.getSetters(resultType,layer.getNamingImplName());
+                for (ColumnDefinitions.Definition definition : row.getColumnDefinitions()) {
+                    if (setters.containsKey(definition.getName())) {
+                        try {
+                            setters.get(definition.getName()).invoke(instance, row.getObject(definition.getName()));
+                        } catch (Exception ex) {
+                            throw new StorageAccessException("");
+                        }
+                    }
+                }
+                instances.add(instance);
+            }
+
+            if(instances.size() == 0) {
+                result = new EmptyResultSet();
+            } else if(instances.size() == 1) {
+                result = new SingleResult(instances.get(0));
+            } else {
+                result = new CollectionResultSet(instances);
+            }
+        } else {
+            List<Map<String, Object>> resultRows = new ArrayList<>();
+            Map<String, Object> map;
+            for(Row row : cassandraResultSet) {
+                map = new HashMap<>();
+                for(ColumnDefinitions.Definition definition : row.getColumnDefinitions()) {
+                    map.put(definition.getName(), row.getObject(definition.getName()));
+                }
+                resultRows.add(map);
+            }
+
+            result = new MapResultSet(resultRows);
+        }
+
+        try {
+            return (R) result;
+        } catch (ClassCastException ex) {
+            throw new StorageAccessException("", ex);
+        }
     }
 
     /**
@@ -51,7 +111,8 @@ public class CassandraStorageSession extends StorageSession {
      * @return
      * @throws StorageAccessException
      */
-    public <R extends org.hcjf.layers.storage.actions.ResultSet> R execute(String cqlStatement, List<Object> values, Class resultType) throws StorageAccessException {
+    public <R extends org.hcjf.layers.storage.actions.ResultSet> R execute(
+            String cqlStatement, List<Object> values, Class resultType) throws StorageAccessException {
         PreparedStatement statement = session.prepare(cqlStatement);
         com.datastax.driver.core.ResultSet cassandraResultSet =
                 session.execute(statement.bind(values.toArray()));
@@ -60,17 +121,15 @@ public class CassandraStorageSession extends StorageSession {
         if(resultType != null) {
             List<Object> instances = new ArrayList<>();
             Object instance;
-            Row row;
             Map<String, Introspection.Setter> setters;
-            for (Row aCassandraResultSet : cassandraResultSet) {
+            for (Row row : cassandraResultSet) {
                 try {
                     instance = resultType.newInstance();
                 } catch (Exception e) {
                     throw new StorageAccessException("");
                 }
 
-                setters = Introspection.getSetters(resultType);
-                row = aCassandraResultSet;
+                setters = Introspection.getSetters(resultType,layer.getNamingImplName());
                 for (ColumnDefinitions.Definition definition : row.getColumnDefinitions()) {
                     if (setters.containsKey(definition.getName())) {
                         try {
@@ -191,5 +250,12 @@ public class CassandraStorageSession extends StorageSession {
     @Override
     public Insert insert() throws StorageAccessException {
         return new CassandraInsert(this);
+    }
+
+    @Override
+    public Select select(Query query) throws StorageAccessException {
+        CassandraSelect result = new CassandraSelect(this);
+        result.setQuery(query);
+        return result;
     }
 }

@@ -3,6 +3,7 @@ package org.hcjf.layers.storage.cassandra.actions;
 import org.hcjf.layers.storage.StorageAccessException;
 import org.hcjf.layers.storage.actions.Insert;
 import org.hcjf.layers.storage.actions.ResultSet;
+import org.hcjf.layers.storage.actions.SingleResult;
 import org.hcjf.layers.storage.cassandra.CassandraStorageSession;
 
 import java.util.ArrayList;
@@ -18,10 +19,18 @@ public class CassandraInsert extends Insert<CassandraStorageSession> {
     private static final String INSERT_STATEMENT = "INSERT INTO %s (%s) VALUES (%s);";
 
     private final Formatter formatter;
+    private Object addedInstance;
 
     public CassandraInsert(CassandraStorageSession storageSession) {
         super(storageSession);
         this.formatter = new Formatter();
+    }
+
+    @Override
+    protected void onAdd(Object object) {
+        setResultType(object.getClass());
+        setResourceName(getSession().normalizeName(object.getClass().getSimpleName().toLowerCase()));
+        addedInstance = object;
     }
 
     /**
@@ -50,7 +59,16 @@ public class CassandraInsert extends Insert<CassandraStorageSession> {
 
         String cqlStatement = formatter.format(
                 INSERT_STATEMENT, normalizedResourceName, valuesBuilder.toString(), valuePlacesBuilder.toString()).toString();
-        return getSession().execute(cqlStatement, values, getResultType());
+        ResultSet sessionResultSet = getSession().execute(cqlStatement, values, getResultType());
+
+        R result;
+        if(addedInstance != null) {
+            result = (R) new SingleResult(addedInstance);
+        } else {
+            result = (R) sessionResultSet;
+        }
+
+        return result;
     }
 
 }
