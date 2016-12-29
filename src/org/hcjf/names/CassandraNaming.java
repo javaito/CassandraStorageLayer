@@ -23,9 +23,12 @@ public class CassandraNaming extends NamingConsumer {
     public String normalize(String value) {
         StringBuilder result = new StringBuilder();
         char[] valueCharacters = value.toCharArray();
-        for(char valueCharacter : valueCharacters) {
+        for (int i = 0; i < valueCharacters.length; i++) {
+            char valueCharacter = valueCharacters[i];
             if(Character.isUpperCase(valueCharacter)) {
-                result.append(NAME_SEPARATOR);
+                if(i != 0) {
+                    result.append(NAME_SEPARATOR);
+                }
                 result.append(Character.toLowerCase(valueCharacter));
             } else {
                 result.append(valueCharacter);

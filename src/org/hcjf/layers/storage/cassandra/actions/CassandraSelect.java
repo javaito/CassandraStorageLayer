@@ -42,7 +42,7 @@ public class CassandraSelect extends Select<CassandraStorageSession> {
         List<String> keys = getSession().getPartitionKey(getSession().normalizeName(getResourceName()));
         keys.addAll(getSession().getClusteringKey(getSession().normalizeName(getResourceName())));
 
-        Map<String, Class<? extends Evaluator>> evaluatorsByName = new LinkedHashMap<>();
+        Map<String, Evaluator> evaluatorsByName = new LinkedHashMap<>();
         Map<String, List<Object>> valuesByName = new LinkedHashMap<>();
         Set<Evaluator> evaluators = query.getEvaluators();
         boolean totalBreak = false;
@@ -50,20 +50,24 @@ public class CassandraSelect extends Select<CassandraStorageSession> {
             Iterator<Evaluator> iterator = evaluators.iterator();
             while(iterator.hasNext()) {
                 Evaluator evaluator = iterator.next();
-                if(getSession().normalizeName(evaluator.getFieldName()).equals(partitionKey)) {
-                    if(evaluatorsByName.containsKey(evaluator.getFieldName())) {
-                        if(evaluator.getClass().equals(evaluatorsByName.get(evaluator.getFieldName()))) {
-                            valuesByName.get(evaluator.getFieldName()).add(evaluator.getValue());
+                if(!(evaluator instanceof FieldEvaluator)) {
+                    continue;
+                }
+                FieldEvaluator fieldEvaluator = (FieldEvaluator) evaluator;
+                if(getSession().normalizeName(fieldEvaluator.getFieldName()).equals(partitionKey)) {
+                    if(evaluatorsByName.containsKey(fieldEvaluator.getFieldName())) {
+                        if(fieldEvaluator.getClass().equals(evaluatorsByName.get(fieldEvaluator.getFieldName()).getClass())) {
+                            valuesByName.get(fieldEvaluator.getFieldName()).add(fieldEvaluator.getValue());
                             totalBreak = false;
                         } else {
-                            evaluatorsByName.remove(evaluator.getFieldName());
-                            valuesByName.remove(evaluator.getFieldName());
+                            evaluatorsByName.remove(fieldEvaluator.getFieldName());
+                            valuesByName.remove(fieldEvaluator.getFieldName());
                             totalBreak = true;
                         }
                     } else {
-                        evaluatorsByName.put(evaluator.getFieldName(), evaluator.getClass());
-                        valuesByName.put(evaluator.getFieldName(), new ArrayList<>());
-                        valuesByName.get(evaluator.getFieldName()).add(evaluator.getValue());
+                        evaluatorsByName.put(fieldEvaluator.getFieldName(), fieldEvaluator);
+                        valuesByName.put(fieldEvaluator.getFieldName(), new ArrayList<>());
+                        valuesByName.get(fieldEvaluator.getFieldName()).add(fieldEvaluator.getValue());
                         totalBreak = false;
                     }
                 } else {
@@ -83,19 +87,30 @@ public class CassandraSelect extends Select<CassandraStorageSession> {
         String separator = "";
         for(String fieldName : evaluatorsByName.keySet()) {
             cqlWhereStatement.append(separator);
-            if(Equals.class.equals(evaluatorsByName.get(fieldName))) {
+            Class<Evaluator> evaluatorClass = (Class<Evaluator>) evaluatorsByName.get(fieldName).getClass();
+            if(Equals.class.equals(evaluatorClass)) {
                 cqlWhereStatement.append(fieldName).append(" = ?");
                 values.add(valuesByName.get(fieldName).get(0));
-            } else if(GreaterThan.class.equals(evaluatorsByName.get(fieldName))) {
-
-            } else if(GreaterThanOrEqual.class.equals(evaluatorsByName.get(fieldName))) {
-
-            } else if(SmallerThan.class.equals(evaluatorsByName.get(fieldName))) {
-
-            } else if(SmallerThanOrEqual.class.equals(evaluatorsByName.get(fieldName))) {
-
-            } else if(In.class.equals(evaluatorsByName.get(fieldName))) {
-
+            } else if(GreaterThan.class.equals(evaluatorClass)) {
+                cqlWhereStatement.append(fieldName).append(" > ?");
+                values.add(valuesByName.get(fieldName).get(0));
+            } else if(GreaterThanOrEqual.class.equals(evaluatorClass)) {
+                cqlWhereStatement.append(fieldName).append(" >= ?");
+                values.add(valuesByName.get(fieldName).get(0));
+            } else if(SmallerThan.class.equals(evaluatorClass)) {
+                cqlWhereStatement.append(fieldName).append(" < ?");
+                values.add(valuesByName.get(fieldName).get(0));
+            } else if(SmallerThanOrEqual.class.equals(evaluatorClass)) {
+                cqlWhereStatement.append(fieldName).append(" <= ?");
+                values.add(valuesByName.get(fieldName).get(0));
+            } else if(In.class.equals(evaluatorClass)) {
+                cqlWhereStatement.append(fieldName).append(" IN ( ?");
+                values.add(valuesByName.get(fieldName).get(0));
+                for (int i = 1; i < values.size(); i++) {
+                    cqlWhereStatement.append(fieldName).append(", ?");
+                    values.add(valuesByName.get(fieldName).get(i));
+                }
+                cqlWhereStatement.append(fieldName).append(" )");
             }
             separator = WHERE_SEPARATOR;
         }
@@ -105,8 +120,7 @@ public class CassandraSelect extends Select<CassandraStorageSession> {
         }
         cqlStatement.append(String.format(SELECT_LIMIT_STATEMENT, query.getLimit().toString()));
 
-        ResultSet sessionResultSet = getSession().executeQuery(query, cqlStatement.toString(), values, getResultType());
-
-        return null;
+        Query reducedCopy = query.reduce(evaluatorsByName.values(), null);
+        return getSession().executeQuery(reducedCopy, cqlStatement.toString(), values, getResultType());
     }
 }

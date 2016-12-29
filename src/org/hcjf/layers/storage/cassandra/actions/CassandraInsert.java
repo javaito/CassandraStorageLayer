@@ -29,7 +29,6 @@ public class CassandraInsert extends Insert<CassandraStorageSession> {
     @Override
     protected void onAdd(Object object) {
         setResultType(object.getClass());
-        setResourceName(getSession().normalizeName(object.getClass().getSimpleName().toLowerCase()));
         addedInstance = object;
     }
 

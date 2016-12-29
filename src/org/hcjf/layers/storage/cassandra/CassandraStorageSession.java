@@ -76,8 +76,6 @@ public class CassandraStorageSession extends StorageSession {
 
             if(instances.size() == 0) {
                 result = new EmptyResultSet();
-            } else if(instances.size() == 1) {
-                result = new SingleResult(instances.get(0));
             } else {
                 result = new CollectionResultSet(instances);
             }

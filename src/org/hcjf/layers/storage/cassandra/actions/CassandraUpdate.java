@@ -11,7 +11,7 @@ import org.hcjf.layers.storage.cassandra.CassandraStorageSession;
  */
 public class CassandraUpdate extends Update<CassandraStorageSession> {
 
-    private static final String UPDATE_STATEMENT = "";
+    private static final String UPDATE_STATEMENT = "UPDATE %s SET %s WHERE %s";
 
     public CassandraUpdate(CassandraStorageSession session) {
         super(session);

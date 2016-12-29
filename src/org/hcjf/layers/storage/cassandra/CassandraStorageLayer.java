@@ -22,11 +22,11 @@ public abstract class CassandraStorageLayer extends StorageLayer<CassandraStorag
 
     private static final String CASSANDRA_STORAGE_LAYER_LOG_TAG = "CASSANDRA_STORAGE_LAYER";
 
-    private static final String CASSANDRA_CONTACT_POINTS = "cassandra.%s.contact.points";
-    private static final String CASSANDRA_KEY_SPACE_NAME = "cassandra.%s.key.space.name";
-    private static final String CASSANDRA_USER_NAME = "cassandra.%s.user.name";
-    private static final String CASSANDRA_PASSWORD = "cassandra.%s.password";
-    private static final String CASSANDRA_NAMING_IMPL = "cassandra.%s.naming.implementation";
+    public static final String CASSANDRA_CONTACT_POINTS = "cassandra.%s.contact.points";
+    public static final String CASSANDRA_KEY_SPACE_NAME = "cassandra.%s.key.space.name";
+    public static final String CASSANDRA_USER_NAME = "cassandra.%s.user.name";
+    public static final String CASSANDRA_PASSWORD = "cassandra.%s.password";
+    public static final String CASSANDRA_NAMING_IMPL = "cassandra.%s.naming.implementation";
 
     private final Cluster cluster;
 
