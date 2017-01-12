@@ -29,6 +29,7 @@ public abstract class CassandraStorageLayer extends StorageLayer<CassandraStorag
     public static final String CASSANDRA_NAMING_IMPL = "cassandra.%s.naming.implementation";
 
     private final Cluster cluster;
+    private final Session session;
 
     public CassandraStorageLayer(String implName) {
         super(implName);
@@ -38,6 +39,7 @@ public abstract class CassandraStorageLayer extends StorageLayer<CassandraStorag
                 formatter.format(CASSANDRA_NAMING_IMPL, getImplName()).toString(),
                 CassandraNaming.CASSANDRA_NAMING_IMPL);
         cluster = Cluster.builder().addContactPoints(getContactPoints()).build();
+        session = cluster.connect(getKeySpace());
     }
 
     /**
@@ -54,7 +56,6 @@ public abstract class CassandraStorageLayer extends StorageLayer<CassandraStorag
      */
     @Override
     public CassandraStorageSession begin() {
-        Session session = cluster.connect(getKeySpace());
         CassandraStorageSession result = new CassandraStorageSession(getImplName(), session, this);
         return result;
     }
