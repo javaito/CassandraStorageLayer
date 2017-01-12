@@ -52,26 +52,9 @@ public class CassandraStorageSession extends StorageSession {
         org.hcjf.layers.storage.actions.ResultSet result;
         if(resultType != null) {
             List<Object> instances = new ArrayList<>();
-            Object instance;
-            Map<String, Introspection.Setter> setters;
+            Map<String, Introspection.Setter> setters = Introspection.getSetters(resultType,layer.getNamingImplName());
             for (Row row : rows) {
-                try {
-                    instance = resultType.newInstance();
-                } catch (Exception e) {
-                    throw new StorageAccessException("");
-                }
-
-                setters = Introspection.getSetters(resultType,layer.getNamingImplName());
-                for (ColumnDefinitions.Definition definition : row.getColumnDefinitions()) {
-                    if (setters.containsKey(definition.getName())) {
-                        try {
-                            setters.get(definition.getName()).invoke(instance, row.getObject(definition.getName()));
-                        } catch (Exception ex) {
-                            throw new StorageAccessException("");
-                        }
-                    }
-                }
-                instances.add(instance);
+                instances.add(createInstance(resultType, row, setters));
             }
 
             if(instances.size() == 0) {
@@ -118,26 +101,9 @@ public class CassandraStorageSession extends StorageSession {
         org.hcjf.layers.storage.actions.ResultSet result;
         if(resultType != null) {
             List<Object> instances = new ArrayList<>();
-            Object instance;
-            Map<String, Introspection.Setter> setters;
+            Map<String, Introspection.Setter> setters = Introspection.getSetters(resultType,layer.getNamingImplName());
             for (Row row : cassandraResultSet) {
-                try {
-                    instance = resultType.newInstance();
-                } catch (Exception e) {
-                    throw new StorageAccessException("");
-                }
-
-                setters = Introspection.getSetters(resultType,layer.getNamingImplName());
-                for (ColumnDefinitions.Definition definition : row.getColumnDefinitions()) {
-                    if (setters.containsKey(definition.getName())) {
-                        try {
-                            setters.get(definition.getName()).invoke(instance, row.getObject(definition.getName()));
-                        } catch (Exception ex) {
-                            throw new StorageAccessException("");
-                        }
-                    }
-                }
-                instances.add(instance);
+                instances.add(createInstance(resultType, row, setters));
             }
 
             if(instances.size() == 0) {
@@ -166,6 +132,43 @@ public class CassandraStorageSession extends StorageSession {
         } catch (ClassCastException ex) {
             throw new StorageAccessException("", ex);
         }
+    }
+
+    /**
+     *
+     * @param resultType
+     * @param row
+     * @param setters
+     * @return
+     * @throws StorageAccessException
+     */
+    private Object createInstance(Class resultType, Row row, Map<String, Introspection.Setter> setters) throws StorageAccessException {
+        Object instance;
+        Object rowValue;
+        Introspection.Setter setter;
+
+        try {
+            instance = resultType.newInstance();
+        } catch (Exception e) {
+            throw new StorageAccessException("");
+        }
+
+        setters = Introspection.getSetters(resultType,layer.getNamingImplName());
+        for (ColumnDefinitions.Definition definition : row.getColumnDefinitions()) {
+            if (setters.containsKey(definition.getName())) {
+                try {
+                    setter = setters.get(definition.getName());
+                    rowValue = row.getObject(definition.getName());
+                    if(setter.getParameterType().isEnum()) {
+                        rowValue = Enum.valueOf((Class<? extends Enum>)setter.getParameterType(), (String)rowValue);
+                    }
+                    setter.invoke(instance, rowValue);
+                } catch (Exception ex) {
+                    throw new StorageAccessException("");
+                }
+            }
+        }
+        return instance;
     }
 
     /**
