@@ -104,13 +104,16 @@ public class CassandraSelect extends Select<CassandraStorageSession> {
                 cqlWhereStatement.append(fieldName).append(" <= ?");
                 values.add(valuesByName.get(fieldName).get(0));
             } else if(In.class.equals(evaluatorClass)) {
-                cqlWhereStatement.append(fieldName).append(" IN ( ?");
-                values.add(valuesByName.get(fieldName).get(0));
-                for (int i = 1; i < values.size(); i++) {
-                    cqlWhereStatement.append(fieldName).append(", ?");
-                    values.add(valuesByName.get(fieldName).get(i));
+                cqlWhereStatement.append(fieldName).append(" IN (");
+                Object[] collection = (Object[]) valuesByName.get(fieldName).get(0);
+                String inSeparator = "";
+                for (Object object : collection) {
+                    cqlWhereStatement.append(inSeparator);
+                    cqlWhereStatement.append("?");
+                    values.add(object);
+                    inSeparator = " ,";
                 }
-                cqlWhereStatement.append(fieldName).append(" )");
+                cqlWhereStatement.append(" )");
             }
             separator = WHERE_SEPARATOR;
         }

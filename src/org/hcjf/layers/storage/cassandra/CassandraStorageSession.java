@@ -38,7 +38,7 @@ public class CassandraStorageSession extends StorageSession {
             Query query, String cqlStatement, List<Object> values, Class resultType) throws StorageAccessException {
         PreparedStatement statement = session.prepare(cqlStatement);
         com.datastax.driver.core.ResultSet cassandraResultSet =
-                session.execute(statement.bind(values.toArray()));
+                    session.execute(statement.bind(values.toArray()));
 
         Set<Row> rows = query.evaluate(cassandraResultSet.all(), new Query.Consumer<Row>() {
 
