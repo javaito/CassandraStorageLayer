@@ -46,12 +46,21 @@ public class CassandraInsert extends Insert<CassandraStorageSession> {
         List<Object> values = new ArrayList<>();
         String normalizedResourceName = getSession().normalizeName(getResourceName());
         String normalizedStorageValueName;
+        Object value;
         for(String storageValueName : getValues().keySet()) {
             normalizedStorageValueName = getSession().normalizeName(storageValueName);
             if(getSession().checkColumn(normalizedResourceName, normalizedStorageValueName)) {
                 valuesBuilder.append(separator).append(normalizedStorageValueName);
                 valuePlacesBuilder.append(separator).append("?");
-                values.add(getValues().get(storageValueName).getValue());
+                value = getValues().get(storageValueName).getValue();
+                if(value != null) {
+                    if (value.getClass().isEnum()) {
+                        value = value.toString();
+                    } else if (value.getClass().equals(Class.class)) {
+                        value = ((Class) value).getName();
+                    }
+                }
+                values.add(value);
                 separator = ",";
             }
         }

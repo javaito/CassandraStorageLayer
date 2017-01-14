@@ -159,12 +159,16 @@ public class CassandraStorageSession extends StorageSession {
                 try {
                     setter = setters.get(definition.getName());
                     rowValue = row.getObject(definition.getName());
-                    if(setter.getParameterType().isEnum()) {
-                        rowValue = Enum.valueOf((Class<? extends Enum>)setter.getParameterType(), (String)rowValue);
+                    if (rowValue != null) {
+                        if (setter.getParameterType().isEnum()) {
+                            rowValue = Enum.valueOf((Class<? extends Enum>) setter.getParameterType(), (String) rowValue);
+                        } else if (setter.getParameterType().equals(Class.class)) {
+                            rowValue = Class.forName((String) rowValue);
+                        }
+                        setter.invoke(instance, rowValue);
                     }
-                    setter.invoke(instance, rowValue);
                 } catch (Exception ex) {
-                    throw new StorageAccessException("");
+                    throw new StorageAccessException("", ex);
                 }
             }
         }
