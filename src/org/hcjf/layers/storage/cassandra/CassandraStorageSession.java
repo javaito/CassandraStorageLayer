@@ -57,11 +57,7 @@ public class CassandraStorageSession extends StorageSession {
                 instances.add(createInstance(resultType, row, setters));
             }
 
-            if(instances.size() == 0) {
-                result = new EmptyResultSet();
-            } else {
-                result = new CollectionResultSet(instances);
-            }
+            result = new CollectionResultSet(instances);
         } else {
             List<Map<String, Object>> resultRows = new ArrayList<>();
             Map<String, Object> map;
