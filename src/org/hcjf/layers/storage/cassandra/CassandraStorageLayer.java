@@ -1,8 +1,14 @@
 package org.hcjf.layers.storage.cassandra;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.HostDistance;
+import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.datastax.driver.core.policies.Policies;
+import com.datastax.driver.core.policies.ReconnectionPolicy;
 import org.hcjf.layers.storage.StorageLayer;
+import org.hcjf.layers.storage.cassandra.properties.CassandraProperties;
 import org.hcjf.log.Log;
 import org.hcjf.names.CassandraNaming;
 import org.hcjf.names.Naming;
@@ -22,30 +28,40 @@ public abstract class CassandraStorageLayer extends StorageLayer<CassandraStorag
 
     private static final String CASSANDRA_STORAGE_LAYER_LOG_TAG = "CASSANDRA_STORAGE_LAYER";
 
-    public static final String CASSANDRA_CONTACT_POINTS = "cassandra.%s.contact.points";
-    public static final String CASSANDRA_KEY_SPACE_NAME = "cassandra.%s.key.space.name";
-    public static final String CASSANDRA_USER_NAME = "cassandra.%s.user.name";
-    public static final String CASSANDRA_PASSWORD = "cassandra.%s.password";
-    public static final String CASSANDRA_NAMING_IMPL = "cassandra.%s.naming.implementation";
-
     private final Cluster cluster;
+//    private final Session session;
 
     public CassandraStorageLayer(String implName) {
         super(implName);
         Naming.addNamingConsumer(new CassandraNaming());
-        Formatter formatter = new Formatter();
-        SystemProperties.putDefaultValue(
-                formatter.format(CASSANDRA_NAMING_IMPL, getImplName()).toString(),
-                CassandraNaming.CASSANDRA_NAMING_IMPL);
-        cluster = Cluster.builder().addContactPoints(getContactPoints()).build();
-    }
 
-    /**
-     *
-     * @return
-     */
-    protected CassandraNaming getNamingImpl() {
-        return new CassandraNaming();
+        PoolingOptions poolingOptions = new PoolingOptions();
+        poolingOptions
+                .setCoreConnectionsPerHost(HostDistance.LOCAL,
+                        SystemProperties.getInteger(CassandraProperties.CASSANDRA_STORAGE_POOL_CORE_CONNECTION_PER_LOCAL_HOST))
+                .setMaxConnectionsPerHost(HostDistance.LOCAL,
+                        SystemProperties.getInteger(CassandraProperties.CASSANDRA_STORAGE_POOL_CORE_MAX_CONNECTION_PER_LOCAL_HOST))
+                .setCoreConnectionsPerHost(HostDistance.REMOTE,
+                        SystemProperties.getInteger(CassandraProperties.CASSANDRA_STORAGE_POOL_CORE_CONNECTION_PER_REMOTE_HOST))
+                .setMaxConnectionsPerHost(HostDistance.REMOTE,
+                        SystemProperties.getInteger(CassandraProperties.CASSANDRA_STORAGE_POOL_CORE_MAX_CONNECTION_PER_REMOTE_HOST))
+                .setMaxRequestsPerConnection(HostDistance.LOCAL,
+                        SystemProperties.getInteger(CassandraProperties.CASSANDRA_STORAGE_POOL_MAX_REQUEST_PER_LOCAL_CONNECTION))
+                .setMaxRequestsPerConnection(HostDistance.REMOTE,
+                        SystemProperties.getInteger(CassandraProperties.CASSANDRA_STORAGE_POOL_MAX_REQUEST_PER_REMOTE_CONNECTION))
+                .setHeartbeatIntervalSeconds(SystemProperties.getInteger(
+                        CassandraProperties.CASSANDRA_STORAGE_POOL_HEARTBEAT_INTERVAL_SECONDS));
+
+        Cluster.Builder builder = Cluster.builder();
+        builder.addContactPoints(getContactPoints());
+        builder.withCredentials(getUserName(), getPassword());
+        builder.withClusterName(getClusterName());
+        builder.withLoadBalancingPolicy(getLoadBalancingPolicy());
+        builder.withReconnectionPolicy(getReconnectionPolicy());
+        builder.withPoolingOptions(poolingOptions);
+        cluster = builder.build();
+
+//        session = cluster.connect(getKeySpace());
     }
 
     /**
@@ -54,67 +70,60 @@ public abstract class CassandraStorageLayer extends StorageLayer<CassandraStorag
      */
     @Override
     public CassandraStorageSession begin() {
-        Session session = cluster.connect(getKeySpace());
-        CassandraStorageSession result = new CassandraStorageSession(getImplName(), session, this);
+        CassandraStorageSession result = new CassandraStorageSession(getImplName(), cluster.connect(getKeySpace()), this);
         return result;
     }
 
     /**
-     *
-     * @return
+     * Return a list with all the contact points to connect the
+     * client with the cassandra cluster.
+     * @return List with all the contact points.
      */
-    private List<InetAddress> getContactPoints() {
-        Formatter formatter = new Formatter();
-        List<String> contactPoints = SystemProperties.getList(formatter.format(
-                CASSANDRA_CONTACT_POINTS, getImplName()).toString());
-        List<InetAddress> result = new ArrayList<>();
-        for(String contactPoint : contactPoints) {
-            try {
-                result.add(InetAddress.getByName(contactPoint));
-            } catch (UnknownHostException ex) {
-                Log.w(CASSANDRA_STORAGE_LAYER_LOG_TAG, "Unknown host %s", ex, contactPoint);
-            }
-        }
-        return result;
+    protected abstract List<InetAddress> getContactPoints();
+
+    /**
+     * Return the key space resource that will use to connect with the cluster
+     * @return Key space resource.
+     */
+    protected abstract String getKeySpace();
+
+    /**
+     * Return the user resource that will use to connect with the cluster.
+     * @return User resource.
+     */
+    protected abstract String getUserName();
+
+    /**
+     * Return the password that will use to connect with the cluster.
+     * @return Password.
+     */
+    protected abstract String getPassword();
+
+    /**
+     * Return the naming implementation to normalize the connection names.
+     * @return Naming implementation resource.
+     */
+    protected abstract String getNamingImplName();
+
+    /**
+     * Return the cluster resource that will use to connect with the cluster.
+     * @return Cluster resource.
+     */
+    protected abstract String getClusterName();
+
+    /**
+     * Return the balance policy that will use to connect with the cluster.
+     * @return Balance policy.
+     */
+    protected LoadBalancingPolicy getLoadBalancingPolicy() {
+        return Policies.defaultLoadBalancingPolicy();
     }
 
     /**
-     *
-     * @return
+     * Return the reconnection policy that will use to connect with the cluster.
+     * @return Reconnection policy.
      */
-    public final String getKeySpace() {
-        Formatter formatter = new Formatter();
-        return SystemProperties.get(formatter.format(
-                CASSANDRA_KEY_SPACE_NAME, getImplName()).toString());
-    }
-
-    /**
-     *
-     * @return
-     */
-    private String getUserName() {
-        Formatter formatter = new Formatter();
-        return SystemProperties.get(formatter.format(
-                CASSANDRA_USER_NAME, getImplName()).toString());
-    }
-
-    /**
-     *
-     * @return
-     */
-    private String getPassword() {
-        Formatter formatter = new Formatter();
-        return SystemProperties.get(formatter.format(
-                CASSANDRA_PASSWORD, getImplName()).toString());
-    }
-
-    /**
-     *
-     * @return
-     */
-    public String getNamingImplName() {
-        Formatter formatter = new Formatter();
-        return SystemProperties.get(formatter.format(
-                CASSANDRA_NAMING_IMPL, getImplName()).toString());
+    protected ReconnectionPolicy getReconnectionPolicy() {
+        return Policies.defaultReconnectionPolicy();
     }
 }
