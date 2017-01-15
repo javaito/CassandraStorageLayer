@@ -8,6 +8,7 @@ import org.hcjf.layers.storage.StorageSession;
 import org.hcjf.layers.storage.actions.*;
 import org.hcjf.layers.storage.cassandra.actions.CassandraInsert;
 import org.hcjf.layers.storage.cassandra.actions.CassandraSelect;
+import org.hcjf.layers.storage.cassandra.actions.CassandraUpdate;
 import org.hcjf.names.Naming;
 import org.hcjf.properties.*;
 import org.hcjf.utils.Introspection;
@@ -61,7 +62,7 @@ public class CassandraStorageSession extends StorageSession {
         } else {
             List<Map<String, Object>> resultRows = new ArrayList<>();
             Map<String, Object> map;
-            for(Row row : cassandraResultSet) {
+            for(Row row : rows) {
                 map = new HashMap<>();
                 for(ColumnDefinitions.Definition definition : row.getColumnDefinitions()) {
                     map.put(definition.getName(), row.getObject(definition.getName()));
