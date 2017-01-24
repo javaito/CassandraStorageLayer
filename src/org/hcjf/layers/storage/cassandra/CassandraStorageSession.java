@@ -12,6 +12,7 @@ import org.hcjf.layers.storage.cassandra.actions.CassandraUpdate;
 import org.hcjf.names.Naming;
 import org.hcjf.properties.*;
 import org.hcjf.utils.Introspection;
+import org.hcjf.utils.Strings;
 
 import java.io.IOException;
 import java.util.*;
@@ -65,7 +66,8 @@ public class CassandraStorageSession extends StorageSession {
             for(Row row : rows) {
                 map = new HashMap<>();
                 for(ColumnDefinitions.Definition definition : row.getColumnDefinitions()) {
-                    map.put(definition.getName(), row.getObject(definition.getName()));
+                    map.put(query.getResourceName() + Strings.CLASS_SEPARATOR + normalizeName(definition.getName()),
+                            row.getObject(definition.getName()));
                 }
                 resultRows.add(map);
             }
@@ -116,7 +118,7 @@ public class CassandraStorageSession extends StorageSession {
             for(Row row : cassandraResultSet) {
                 map = new HashMap<>();
                 for(ColumnDefinitions.Definition definition : row.getColumnDefinitions()) {
-                    map.put(definition.getName(), row.getObject(definition.getName()));
+                    map.put(normalizeName(definition.getName()), row.getObject(definition.getName()));
                 }
                 rows.add(map);
             }
