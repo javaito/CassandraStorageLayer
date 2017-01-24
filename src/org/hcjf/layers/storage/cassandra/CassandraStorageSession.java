@@ -187,7 +187,6 @@ public class CassandraStorageSession extends StorageSession {
      */
     @Override
     public void close() throws IOException {
-        session.close();
     }
 
     /**

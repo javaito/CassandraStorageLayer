@@ -29,7 +29,7 @@ public abstract class CassandraStorageLayer extends StorageLayer<CassandraStorag
     private static final String CASSANDRA_STORAGE_LAYER_LOG_TAG = "CASSANDRA_STORAGE_LAYER";
 
     private final Cluster cluster;
-//    private final Session session;
+    private Session session;
 
     public CassandraStorageLayer(String implName) {
         super(implName);
@@ -61,7 +61,7 @@ public abstract class CassandraStorageLayer extends StorageLayer<CassandraStorag
         builder.withPoolingOptions(poolingOptions);
         cluster = builder.build();
 
-//        session = cluster.connect(getKeySpace());
+        session = cluster.connect(getKeySpace());
     }
 
     /**
@@ -70,8 +70,19 @@ public abstract class CassandraStorageLayer extends StorageLayer<CassandraStorag
      */
     @Override
     public CassandraStorageSession begin() {
-        CassandraStorageSession result = new CassandraStorageSession(getImplName(), cluster.connect(getKeySpace()), this);
+        CassandraStorageSession result = new CassandraStorageSession(getImplName(), getCassandraSession(), this);
         return result;
+    }
+
+    /**
+     *
+     * @return
+     */
+    private synchronized Session getCassandraSession() {
+        if(session == null || session.isClosed()) {
+            session = cluster.connect(getKeySpace());
+        }
+        return session;
     }
 
     /**
