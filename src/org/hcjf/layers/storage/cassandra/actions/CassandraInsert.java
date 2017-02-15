@@ -18,18 +18,21 @@ public class CassandraInsert extends Insert<CassandraStorageSession> {
 
     private static final String INSERT_STATEMENT = "INSERT INTO %s (%s) VALUES (%s);";
 
-    private final Formatter formatter;
     private Object addedInstance;
 
     public CassandraInsert(CassandraStorageSession storageSession) {
         super(storageSession);
-        this.formatter = new Formatter();
     }
 
     @Override
     protected void onAdd(Object object) {
         setResultType(object.getClass());
+        setResourceName(object.getClass().getSimpleName());
         addedInstance = object;
+    }
+
+    protected Object getAddedInstance() {
+        return addedInstance;
     }
 
     /**
@@ -39,7 +42,7 @@ public class CassandraInsert extends Insert<CassandraStorageSession> {
      * @throws StorageAccessException
      */
     @Override
-    public <R extends ResultSet> R execute() throws StorageAccessException {
+    public <R extends ResultSet> R execute(Object... params) throws StorageAccessException {
         StringBuilder valuesBuilder = new StringBuilder();
         String separator = "";
         StringBuilder valuePlacesBuilder = new StringBuilder();
@@ -65,7 +68,7 @@ public class CassandraInsert extends Insert<CassandraStorageSession> {
             }
         }
 
-        String cqlStatement = formatter.format(
+        String cqlStatement = String.format(
                 INSERT_STATEMENT, normalizedResourceName, valuesBuilder.toString(), valuePlacesBuilder.toString()).toString();
         ResultSet sessionResultSet = getSession().execute(cqlStatement, values, getResultType());
 

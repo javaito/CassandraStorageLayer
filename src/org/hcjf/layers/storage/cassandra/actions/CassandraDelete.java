@@ -21,7 +21,7 @@ public class CassandraDelete extends Delete<CassandraStorageSession> {
     }
 
     @Override
-    public <R extends ResultSet> R execute() throws StorageAccessException {
+    public <R extends ResultSet> R execute(Object... params) throws StorageAccessException {
         R resultSet = null;
         Select select = getSession().select(getQuery());
         ResultSet selectResultSet = select.execute();

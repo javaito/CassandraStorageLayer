@@ -21,7 +21,7 @@ public class CassandraUpdate extends Update<CassandraStorageSession> {
      * @return
      */
     @Override
-    public <R extends ResultSet> R execute() throws StorageAccessException {
+    public <R extends ResultSet> R execute(Object... params) throws StorageAccessException {
         return null;
     }
 }

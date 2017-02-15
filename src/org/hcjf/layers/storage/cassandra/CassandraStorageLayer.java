@@ -24,17 +24,35 @@ import java.util.List;
  * @author javaito
  * @mail javaito@gmail.com
  */
-public abstract class CassandraStorageLayer extends StorageLayer<CassandraStorageSession> {
+public abstract class CassandraStorageLayer<S extends CassandraStorageSession> extends StorageLayer<S> {
 
-    private static final String CASSANDRA_STORAGE_LAYER_LOG_TAG = "CASSANDRA_STORAGE_LAYER";
-
-    private final Cluster cluster;
+    private Cluster cluster;
     private Session session;
 
     public CassandraStorageLayer(String implName) {
         super(implName);
         Naming.addNamingConsumer(new CassandraNaming());
+    }
 
+    /**
+     * Return a session with the storage implementation.
+     * @return Storage implementation.
+     */
+    @Override
+    public S begin() {
+        synchronized (this) {
+            if(cluster == null) {
+                createCluster();
+                session = cluster.connect(getKeySpace());
+            }
+        }
+
+        return createSessionInstance(getImplName());
+    }
+
+    protected abstract S createSessionInstance(String implName);
+
+    private synchronized void createCluster() {
         PoolingOptions poolingOptions = new PoolingOptions();
         poolingOptions
                 .setCoreConnectionsPerHost(HostDistance.LOCAL,
@@ -60,25 +78,19 @@ public abstract class CassandraStorageLayer extends StorageLayer<CassandraStorag
         builder.withReconnectionPolicy(getReconnectionPolicy());
         builder.withPoolingOptions(poolingOptions);
         cluster = builder.build();
-
-        session = cluster.connect(getKeySpace());
-    }
-
-    /**
-     * Return a session with the storage implementation.
-     * @return Storage implementation.
-     */
-    @Override
-    public CassandraStorageSession begin() {
-        CassandraStorageSession result = new CassandraStorageSession(getImplName(), getCassandraSession(), this);
-        return result;
     }
 
     /**
      *
      * @return
      */
-    private synchronized Session getCassandraSession() {
+    protected synchronized Session getCassandraSession() {
+        if(cluster.isClosed()) {
+            try {
+                cluster.close();
+            } catch (Exception ex){}
+            createCluster();
+        }
         if(session == null || session.isClosed()) {
             session = cluster.connect(getKeySpace());
         }
@@ -114,7 +126,9 @@ public abstract class CassandraStorageLayer extends StorageLayer<CassandraStorag
      * Return the naming implementation to normalize the connection names.
      * @return Naming implementation resource.
      */
-    protected abstract String getNamingImplName();
+    public String getNamingImplName() {
+        return CassandraNaming.CASSANDRA_NAMING_IMPL;
+    }
 
     /**
      * Return the cluster resource that will use to connect with the cluster.

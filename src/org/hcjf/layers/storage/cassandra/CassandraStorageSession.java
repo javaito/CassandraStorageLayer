@@ -54,9 +54,8 @@ public class CassandraStorageSession extends StorageSession {
         org.hcjf.layers.storage.actions.ResultSet result;
         if(resultType != null) {
             List<Object> instances = new ArrayList<>();
-            Map<String, Introspection.Setter> setters = Introspection.getSetters(resultType,layer.getNamingImplName());
             for (Row row : rows) {
-                instances.add(createInstance(resultType, row, setters));
+                instances.add(createInstance(resultType, row));
             }
 
             result = new CollectionResultSet(instances);
@@ -64,12 +63,7 @@ public class CassandraStorageSession extends StorageSession {
             List<Map<String, Object>> resultRows = new ArrayList<>();
             Map<String, Object> map;
             for(Row row : rows) {
-                map = new HashMap<>();
-                for(ColumnDefinitions.Definition definition : row.getColumnDefinitions()) {
-                    map.put(query.getResourceName() + Strings.CLASS_SEPARATOR + normalizeName(definition.getName()),
-                            row.getObject(definition.getName()));
-                }
-                resultRows.add(map);
+                resultRows.add(createRows(row));
             }
 
             result = new MapResultSet(resultRows);
@@ -80,6 +74,10 @@ public class CassandraStorageSession extends StorageSession {
         } catch (ClassCastException ex) {
             throw new StorageAccessException("", ex);
         }
+    }
+
+    protected CassandraStorageLayer getLayer() {
+        return layer;
     }
 
     /**
@@ -100,9 +98,9 @@ public class CassandraStorageSession extends StorageSession {
         org.hcjf.layers.storage.actions.ResultSet result;
         if(resultType != null) {
             List<Object> instances = new ArrayList<>();
-            Map<String, Introspection.Setter> setters = Introspection.getSetters(resultType,layer.getNamingImplName());
+
             for (Row row : cassandraResultSet) {
-                instances.add(createInstance(resultType, row, setters));
+                instances.add(createInstance(resultType, row));
             }
 
             if(instances.size() == 0) {
@@ -116,11 +114,7 @@ public class CassandraStorageSession extends StorageSession {
             List<Map<String, Object>> rows = new ArrayList<>();
             Map<String, Object> map;
             for(Row row : cassandraResultSet) {
-                map = new HashMap<>();
-                for(ColumnDefinitions.Definition definition : row.getColumnDefinitions()) {
-                    map.put(normalizeName(definition.getName()), row.getObject(definition.getName()));
-                }
-                rows.add(map);
+                rows.add(createRows(row));
             }
 
             result = new MapResultSet(rows);
@@ -134,14 +128,13 @@ public class CassandraStorageSession extends StorageSession {
     }
 
     /**
-     *
-     * @param resultType
-     * @param row
-     * @param setters
-     * @return
+     * This method creates an instance of the result type expected.
+     * @param resultType Result type expected
+     * @param row Data base row.
+     * @return Return an expected instance.
      * @throws StorageAccessException
      */
-    private Object createInstance(Class resultType, Row row, Map<String, Introspection.Setter> setters) throws StorageAccessException {
+    protected Object createInstance(Class resultType, Row row) throws StorageAccessException {
         Object instance;
         Object rowValue;
         Introspection.Setter setter;
@@ -152,7 +145,7 @@ public class CassandraStorageSession extends StorageSession {
             throw new StorageAccessException("");
         }
 
-        setters = Introspection.getSetters(resultType,layer.getNamingImplName());
+        Map<String, Introspection.Setter> setters = Introspection.getSetters(resultType,layer.getNamingImplName());
         for (ColumnDefinitions.Definition definition : row.getColumnDefinitions()) {
             if (setters.containsKey(definition.getName())) {
                 try {
@@ -175,6 +168,19 @@ public class CassandraStorageSession extends StorageSession {
     }
 
     /**
+     * Create a map from a data base row.
+     * @param row Data base row.
+     * @return Map with all the values.
+     */
+    protected Map<String, Object> createRows(Row row) {
+        Map<String, Object> map = new HashMap<>();
+        for(ColumnDefinitions.Definition definition : row.getColumnDefinitions()) {
+            map.put(normalizeName(definition.getName()), row.getObject(definition.getName()));
+        }
+        return map;
+    }
+
+    /**
      * Closes this stream and releases any system resources associated
      * with it. If the stream is already closed then invoking this
      * method has no effect.
@@ -192,17 +198,17 @@ public class CassandraStorageSession extends StorageSession {
     }
 
     /**
-     *
-     * @param storageValueName
-     * @return
+     * Verify if the column exist in the resource.
+     * @param storageColumn Resource of the data base.
+     * @return Return true if the column exist and false if the column not exist.
      */
-    public boolean checkColumn(String resourceName, String storageValueName) {
+    public boolean checkColumn(String resourceName, String storageColumn) {
         boolean result = false;
         KeyspaceMetadata keyspaceMetadata =
                 session.getCluster().getMetadata().getKeyspace(layer.getKeySpace());
         TableMetadata tableMetadata = keyspaceMetadata.getTable(resourceName);
         for(ColumnMetadata columnMetadata : tableMetadata.getColumns()) {
-            if(columnMetadata.getName().equals(storageValueName)) {
+            if(columnMetadata.getName().equals(storageColumn)) {
                 result = true;
                 break;
             }
@@ -211,18 +217,18 @@ public class CassandraStorageSession extends StorageSession {
     }
 
     /**
-     *
-     * @param name
-     * @return
+     * Normalize the names.
+     * @param name Name to normalize.
+     * @return Normalized name.
      */
     public final String normalizeName(String name) {
         return Naming.normalize(layer.getNamingImplName(), name);
     }
 
     /**
-     *
-     * @param resourceName
-     * @return
+     * Return the set of partition keys of the table.
+     * @param resourceName Table name.
+     * @return Set with partition keys.
      */
     public final List<String> getPartitionKey(String resourceName) {
         List<String> result = new ArrayList<>();
@@ -233,15 +239,30 @@ public class CassandraStorageSession extends StorageSession {
     }
 
     /**
-     *
-     * @param resourceName
-     * @return
+     * Return the set of clustering keys of the table.
+     * @param resourceName Table name.
+     * @return Set with clustering keys.
      */
     public final List<String> getClusteringKey(String resourceName) {
         List<String> result = new ArrayList<>();
         TableMetadata metadata = session.getCluster().getMetadata().
                 getKeyspace(layer.getKeySpace()).getTable(resourceName);
         result.addAll(metadata.getClusteringColumns().stream().map(ColumnMetadata::getName).collect(Collectors.toList()));
+        return result;
+    }
+
+    /**
+     * Return a set with indexes of the table.
+     * @param resourceName Table name.
+     * @return Set with indexes.
+     */
+    public final List<String> getIndexes(String resourceName) {
+        List<String> result = new ArrayList<>();
+        TableMetadata metadata = session.getCluster().getMetadata().
+                getKeyspace(layer.getKeySpace()).getTable(resourceName);
+        for(IndexMetadata indexMetadata : metadata.getIndexes()) {
+            result.add(indexMetadata.getTarget());
+        }
         return result;
     }
 
