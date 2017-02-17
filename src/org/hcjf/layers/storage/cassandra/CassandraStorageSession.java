@@ -2,6 +2,7 @@ package org.hcjf.layers.storage.cassandra;
 
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.ResultSet;
+import org.hcjf.layers.query.JoinableMap;
 import org.hcjf.layers.query.Query;
 import org.hcjf.layers.storage.StorageAccessException;
 import org.hcjf.layers.storage.StorageSession;
@@ -61,9 +62,8 @@ public class CassandraStorageSession extends StorageSession {
             result = new CollectionResultSet(instances);
         } else {
             List<Map<String, Object>> resultRows = new ArrayList<>();
-            Map<String, Object> map;
             for(Row row : rows) {
-                resultRows.add(createRows(row));
+                resultRows.add(createRows(row, query.getResourceName()));
             }
 
             result = new MapResultSet(resultRows);
@@ -114,7 +114,11 @@ public class CassandraStorageSession extends StorageSession {
             List<Map<String, Object>> rows = new ArrayList<>();
             Map<String, Object> map;
             for(Row row : cassandraResultSet) {
-                rows.add(createRows(row));
+                map = new HashMap<>();
+                for(ColumnDefinitions.Definition definition : row.getColumnDefinitions()) {
+                    map.put(normalizeName(definition.getName()), row.getObject(definition.getName()));
+                }
+                rows.add(map);
             }
 
             result = new MapResultSet(rows);
@@ -172,8 +176,8 @@ public class CassandraStorageSession extends StorageSession {
      * @param row Data base row.
      * @return Map with all the values.
      */
-    protected Map<String, Object> createRows(Row row) {
-        Map<String, Object> map = new HashMap<>();
+    protected JoinableMap createRows(Row row, String resourceName) {
+        JoinableMap map = new JoinableMap(resourceName);
         for(ColumnDefinitions.Definition definition : row.getColumnDefinitions()) {
             map.put(normalizeName(definition.getName()), row.getObject(definition.getName()));
         }

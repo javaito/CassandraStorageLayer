@@ -39,9 +39,11 @@ public class CassandraSelect extends Select<CassandraStorageSession> {
     public <R extends ResultSet> R execute(Object... params) throws StorageAccessException {
         Query query = getQuery();
 
-        List<String> keys = getSession().getPartitionKey(getSession().normalizeName(getResourceName()));
-        keys.addAll(getSession().getClusteringKey(getSession().normalizeName(getResourceName())));
-        keys.addAll(getSession().getIndexes(getSession().normalizeName(getResourceName())));
+        String resourceName = query.getResourceName();
+
+        List<String> keys = getSession().getPartitionKey(getSession().normalizeName(resourceName));
+        keys.addAll(getSession().getClusteringKey(getSession().normalizeName(resourceName)));
+        keys.addAll(getSession().getIndexes(getSession().normalizeName(resourceName)));
 
         Map<String, Evaluator> evaluatorsByName = new LinkedHashMap<>();
         Map<String, List<Object>> valuesByName = new LinkedHashMap<>();
@@ -50,7 +52,7 @@ public class CassandraSelect extends Select<CassandraStorageSession> {
 
         List<Object> values = new ArrayList<>();
         StringBuilder cqlStatement = new StringBuilder();
-        cqlStatement.append(String.format(SELECT_STATEMENT, getSession().normalizeName(getResourceName())));
+        cqlStatement.append(String.format(SELECT_STATEMENT, getSession().normalizeName(resourceName)));
 
         StringBuilder cqlWhereStatement = new StringBuilder();
         String separator = "";
