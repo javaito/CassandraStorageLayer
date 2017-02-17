@@ -128,9 +128,10 @@ public class CassandraSelect extends Select<CassandraStorageSession> {
                             valuesByName.remove(fieldEvaluator.getQueryField().getFieldName());
                         }
                     } else {
-                        evaluatorsByName.put(fieldEvaluator.getQueryField().getFieldName(), fieldEvaluator);
-                        valuesByName.put(fieldEvaluator.getQueryField().getFieldName(), new ArrayList<>());
-                        valuesByName.get(fieldEvaluator.getQueryField().getFieldName()).add(fieldEvaluator.getValue(null, null, params));
+                        String normalizedFieldName = getSession().normalizeName(fieldEvaluator.getQueryField().getFieldName());
+                        evaluatorsByName.put(normalizedFieldName, fieldEvaluator);
+                        valuesByName.put(normalizedFieldName, new ArrayList<>());
+                        valuesByName.get(normalizedFieldName).add(fieldEvaluator.getValue(null, null, params));
                     }
                 }
             }
