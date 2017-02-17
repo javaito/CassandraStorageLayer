@@ -119,16 +119,16 @@ public class CassandraSelect extends Select<CassandraStorageSession> {
                 exploreQuery(evaluatorsByName, valuesByName, ((EvaluatorCollection)evaluator).getEvaluators(), keys, params);
             } else {
                 FieldEvaluator fieldEvaluator = (FieldEvaluator) evaluator;
-                if (keys.contains(getSession().normalizeName(fieldEvaluator.getQueryField().getFieldName()))) {
-                    if (evaluatorsByName.containsKey(fieldEvaluator.getQueryField().getFieldName())) {
-                        if (fieldEvaluator.getClass().equals(evaluatorsByName.get(fieldEvaluator.getQueryField().getFieldName()).getClass())) {
-                            valuesByName.get(fieldEvaluator.getQueryField().getFieldName()).add(fieldEvaluator.getValue(null, null, params));
+                String normalizedFieldName = getSession().normalizeName(fieldEvaluator.getQueryField().getFieldName());
+                if (keys.contains(normalizedFieldName)) {
+                    if (evaluatorsByName.containsKey(normalizedFieldName)) {
+                        if (fieldEvaluator.getClass().equals(evaluatorsByName.get(normalizedFieldName).getClass())) {
+                            valuesByName.get(normalizedFieldName).add(fieldEvaluator.getValue(null, null, params));
                         } else {
-                            evaluatorsByName.remove(fieldEvaluator.getQueryField().getFieldName());
-                            valuesByName.remove(fieldEvaluator.getQueryField().getFieldName());
+                            evaluatorsByName.remove(normalizedFieldName);
+                            valuesByName.remove(normalizedFieldName);
                         }
                     } else {
-                        String normalizedFieldName = getSession().normalizeName(fieldEvaluator.getQueryField().getFieldName());
                         evaluatorsByName.put(normalizedFieldName, fieldEvaluator);
                         valuesByName.put(normalizedFieldName, new ArrayList<>());
                         valuesByName.get(normalizedFieldName).add(fieldEvaluator.getValue(null, null, params));
