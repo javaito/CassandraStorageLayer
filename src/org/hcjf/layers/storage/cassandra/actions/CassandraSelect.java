@@ -119,11 +119,11 @@ public class CassandraSelect extends Select<CassandraStorageSession> {
                 exploreQuery(evaluatorsByName, valuesByName, ((EvaluatorCollection)evaluator).getEvaluators(), keys, params);
             } else {
                 FieldEvaluator fieldEvaluator = (FieldEvaluator) evaluator;
-                String normalizedFieldName = getSession().normalizeName(fieldEvaluator.getQueryField().getFieldName());
+                String normalizedFieldName = getSession().normalizeName(((Query.QueryField)fieldEvaluator.getQueryParameter()).getFieldName());
                 if (keys.contains(normalizedFieldName)) {
                     if (evaluatorsByName.containsKey(normalizedFieldName)) {
                         if (fieldEvaluator.getClass().equals(evaluatorsByName.get(normalizedFieldName).getClass())) {
-                            valuesByName.get(normalizedFieldName).add(fieldEvaluator.getValue(null, null, params));
+                            valuesByName.get(normalizedFieldName).add(fieldEvaluator.getValue(null,null, null, params));
                         } else {
                             evaluatorsByName.remove(normalizedFieldName);
                             valuesByName.remove(normalizedFieldName);
@@ -131,7 +131,7 @@ public class CassandraSelect extends Select<CassandraStorageSession> {
                     } else {
                         evaluatorsByName.put(normalizedFieldName, fieldEvaluator);
                         valuesByName.put(normalizedFieldName, new ArrayList<>());
-                        valuesByName.get(normalizedFieldName).add(fieldEvaluator.getValue(null, null, params));
+                        valuesByName.get(normalizedFieldName).add(fieldEvaluator.getValue(null,null, null, params));
                     }
                 }
             }

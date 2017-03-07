@@ -46,8 +46,12 @@ public class CassandraStorageSession extends StorageSession {
         Set<Row> rows = query.evaluate(cassandraResultSet.all(), new Query.Consumer<Row>() {
 
             @Override
-            public <R> R get(Row row, String fieldName) {
-                return (R) row.getObject(normalizeName(fieldName));
+            public <R> R get(Row row, Query.QueryParameter queryParameter) {
+                if(queryParameter instanceof Query.QueryField) {
+                    return (R) row.getObject(normalizeName(((Query.QueryField)queryParameter).getFieldName()));
+                } else {
+                    throw new UnsupportedOperationException();
+                }
             }
 
         });
