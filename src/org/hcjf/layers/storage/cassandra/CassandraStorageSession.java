@@ -80,17 +80,37 @@ public class CassandraStorageSession extends StorageSession {
         }
     }
 
-    protected CassandraStorageLayer getLayer() {
+    /**
+     * Return the storage layer associated to the storage session.
+     * @return Storage layer.
+     */
+    protected final CassandraStorageLayer getLayer() {
         return layer;
     }
 
     /**
-     *
-     * @param cqlStatement
-     * @param values
-     * @param resultType
-     * @param <R>
-     * @return
+     * Return the cassandra cluster session instance.
+     * @return Cassandra cluster session instance.
+     */
+    protected final Session getSession() {
+        return session;
+    }
+
+    /**
+     * Return the key space metadata for the associated storage layer.
+     * @return Key space metadata.
+     */
+    protected final KeyspaceMetadata getKeyspaceMetadata() {
+        return session.getCluster().getMetadata().getKeyspace(layer.getKeySpace());
+    }
+
+    /**
+     * Execute the statement over cassandra cluster.
+     * @param cqlStatement Cel statement.
+     * @param values Statements values.
+     * @param resultType Expected result type.
+     * @param <R> Expected result set type.
+     * @return Storage layer result set instance.
      * @throws StorageAccessException
      */
     public <R extends org.hcjf.layers.storage.actions.ResultSet> R execute(
@@ -275,8 +295,8 @@ public class CassandraStorageSession extends StorageSession {
     }
 
     /**
-     *
-     * @return
+     * Return the insert implementation for cassandra storage layer.
+     * @return Insert implementation.
      * @throws StorageAccessException
      */
     @Override
@@ -284,6 +304,12 @@ public class CassandraStorageSession extends StorageSession {
         return new CassandraInsert(this);
     }
 
+    /**
+     * Return the select implementation for cassandra storage layer.
+     * @param query Query to create the select instance.
+     * @return Select instance.
+     * @throws StorageAccessException
+     */
     @Override
     public Select select(Query query) throws StorageAccessException {
         CassandraSelect result = new CassandraSelect(this);
