@@ -84,7 +84,7 @@ public class CassandraStorageSession extends StorageSession {
         totalTime = System.currentTimeMillis() - totalTime;
 
         Log.d(SystemProperties.get(CassandraProperties.CASSADNRA_STORAGE_LAYER_LOG_TAG),
-                "CQL: %s, Query Time: %d ms, Parsing Time: %d ms, Total time: %d ms, Result size: %d",
+                "CQL: %s -> [Query Time: %d ms, Parsing Time: %d ms, Total time: %d ms, Result size: %d]",
                 statement.getQueryString(), queryTime, parsingTime, totalTime, rawRows.size());
 
         try {
@@ -170,7 +170,7 @@ public class CassandraStorageSession extends StorageSession {
         totalTime = System.currentTimeMillis() - totalTime;
 
         Log.d(SystemProperties.get(CassandraProperties.CASSADNRA_STORAGE_LAYER_LOG_TAG),
-                "CQL: %s, Query Time: %d ms, Parsing Time: %d ms, Total time: %d ms",
+                "CQL: %s -> [Query Time: %d ms, Parsing Time: %d ms, Total time: %d ms]",
                 statement.getQueryString(), queryTime, parsingTime, totalTime);
 
         try {
