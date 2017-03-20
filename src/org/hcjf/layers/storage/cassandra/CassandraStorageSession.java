@@ -10,6 +10,8 @@ import org.hcjf.layers.storage.actions.*;
 import org.hcjf.layers.storage.cassandra.actions.CassandraInsert;
 import org.hcjf.layers.storage.cassandra.actions.CassandraSelect;
 import org.hcjf.layers.storage.cassandra.actions.CassandraUpdate;
+import org.hcjf.layers.storage.cassandra.properties.CassandraProperties;
+import org.hcjf.log.Log;
 import org.hcjf.names.Naming;
 import org.hcjf.properties.*;
 import org.hcjf.utils.Introspection;
@@ -40,10 +42,16 @@ public class CassandraStorageSession extends StorageSession {
     public <R extends org.hcjf.layers.storage.actions.ResultSet> R executeQuery(
             Query query, String cqlStatement, List<Object> values, Class resultType) throws StorageAccessException {
         PreparedStatement statement = session.prepare(cqlStatement);
+
+        long totalTime;
+        long queryTime = totalTime = System.currentTimeMillis();
         com.datastax.driver.core.ResultSet cassandraResultSet =
                     session.execute(statement.bind(values.toArray()));
+        List<Row> rawRows = cassandraResultSet.all();
+        queryTime = System.currentTimeMillis() - queryTime;
 
-        Set<Row> rows = query.evaluate(cassandraResultSet.all(), new Query.Consumer<Row>() {
+        long parsingTime = System.currentTimeMillis();
+        Set<Row> rows = query.evaluate(rawRows, new Query.Consumer<Row>() {
 
             @Override
             public <R> R get(Row row, Query.QueryParameter queryParameter) {
@@ -72,6 +80,12 @@ public class CassandraStorageSession extends StorageSession {
 
             result = new MapResultSet(resultRows);
         }
+        parsingTime = System.currentTimeMillis() - parsingTime;
+        totalTime = System.currentTimeMillis() - totalTime;
+
+        Log.d(SystemProperties.get(CassandraProperties.CASSADNRA_STORAGE_LAYER_LOG_TAG),
+                "CQL: %s, Query Time: %d ms, Parsing Time: %d ms, Total time: %d ms, Result size: %d",
+                statement.getQueryString(), queryTime, parsingTime, totalTime, rawRows.size());
 
         try {
             return (R) result;
@@ -116,9 +130,14 @@ public class CassandraStorageSession extends StorageSession {
     public <R extends org.hcjf.layers.storage.actions.ResultSet> R execute(
             String cqlStatement, List<Object> values, Class resultType) throws StorageAccessException {
         PreparedStatement statement = session.prepare(cqlStatement);
+
+        long totalTime;
+        long queryTime = totalTime = System.currentTimeMillis();
         com.datastax.driver.core.ResultSet cassandraResultSet =
                 session.execute(statement.bind(values.toArray()));
+        queryTime = System.currentTimeMillis() - queryTime;
 
+        long parsingTime = System.currentTimeMillis();
         org.hcjf.layers.storage.actions.ResultSet result;
         if(resultType != null) {
             List<Object> instances = new ArrayList<>();
@@ -147,6 +166,12 @@ public class CassandraStorageSession extends StorageSession {
 
             result = new MapResultSet(rows);
         }
+        parsingTime = System.currentTimeMillis() - parsingTime;
+        totalTime = System.currentTimeMillis() - totalTime;
+
+        Log.d(SystemProperties.get(CassandraProperties.CASSADNRA_STORAGE_LAYER_LOG_TAG),
+                "CQL: %s, Query Time: %d ms, Parsing Time: %d ms, Total time: %d ms",
+                statement.getQueryString(), queryTime, parsingTime, totalTime);
 
         try {
             return (R) result;
