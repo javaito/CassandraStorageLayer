@@ -73,7 +73,7 @@ public class CassandraInsert extends Insert<CassandraStorageSession> {
         return result;
     }
 
-    private Object checkValue(Object value) {
+    protected Object checkValue(Object value) {
         Object result = value;
         if(result != null) {
             if (result.getClass().isEnum()) {
