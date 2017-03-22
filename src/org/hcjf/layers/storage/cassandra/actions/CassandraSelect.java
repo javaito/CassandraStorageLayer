@@ -40,10 +40,11 @@ public class CassandraSelect extends Select<CassandraStorageSession> {
         Query query = getQuery();
 
         String resourceName = query.getResourceName();
+        String normalizedResourceName = getSession().normalizeName(resourceName);
 
-        List<String> keys = getSession().getPartitionKey(getSession().normalizeName(resourceName));
-        keys.addAll(getSession().getClusteringKey(getSession().normalizeName(resourceName)));
-        keys.addAll(getSession().getIndexes(getSession().normalizeName(resourceName)));
+        List<String> keys = getSession().getPartitionKey(normalizedResourceName);
+        keys.addAll(getSession().getClusteringKey(normalizedResourceName));
+        keys.addAll(getSession().getIndexes(normalizedResourceName));
 
         Map<String, Evaluator> evaluatorsByName = new LinkedHashMap<>();
         Map<String, List<Object>> valuesByName = new LinkedHashMap<>();
@@ -52,7 +53,7 @@ public class CassandraSelect extends Select<CassandraStorageSession> {
 
         List<Object> values = new ArrayList<>();
         StringBuilder cqlStatement = new StringBuilder();
-        cqlStatement.append(String.format(SELECT_STATEMENT, getSession().normalizeName(resourceName)));
+        cqlStatement.append(String.format(SELECT_STATEMENT, normalizedResourceName));
 
         StringBuilder cqlWhereStatement = new StringBuilder();
         String separator = "";
@@ -75,16 +76,21 @@ public class CassandraSelect extends Select<CassandraStorageSession> {
                 cqlWhereStatement.append(fieldName).append(" <= ?");
                 values.add(valuesByName.get(fieldName).get(0));
             } else if(In.class.equals(evaluatorClass)) {
-                cqlWhereStatement.append(fieldName).append(" IN (");
-                Object[] collection = (Object[]) valuesByName.get(fieldName).get(0);
-                String inSeparator = "";
-                for (Object object : collection) {
-                    cqlWhereStatement.append(inSeparator);
-                    cqlWhereStatement.append("?");
-                    values.add(object);
-                    inSeparator = " ,";
+                if(getSession().getColumnDataType(normalizedResourceName, fieldName).isCollection()) {
+                    cqlWhereStatement.append(fieldName).append(" CONTAINS ?");
+                    values.add(valuesByName.get(fieldName).get(0));
+                } else {
+                    cqlWhereStatement.append(fieldName).append(" IN (");
+                    Object[] collection = (Object[]) valuesByName.get(fieldName).get(0);
+                    String inSeparator = "";
+                    for (Object object : collection) {
+                        cqlWhereStatement.append(inSeparator);
+                        cqlWhereStatement.append("?");
+                        values.add(object);
+                        inSeparator = " ,";
+                    }
+                    cqlWhereStatement.append(" )");
                 }
-                cqlWhereStatement.append(" )");
             }
             separator = WHERE_SEPARATOR;
         }

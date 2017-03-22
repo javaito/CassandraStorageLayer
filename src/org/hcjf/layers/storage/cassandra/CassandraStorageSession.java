@@ -320,6 +320,19 @@ public class CassandraStorageSession extends StorageSession {
     }
 
     /**
+     * Return the cassandra data type of a column.
+     * @param resourceName Resource name.
+     * @param columnName Column name.
+     * @return Column data type.
+     */
+    public final DataType getColumnDataType(String resourceName, String columnName) {
+        TableMetadata metadata = session.getCluster().getMetadata().
+                getKeyspace(layer.getKeySpace()).getTable(resourceName);
+        ColumnMetadata columnMetadata = metadata.getColumn(columnName);
+        return columnMetadata.getType();
+    }
+
+    /**
      * Return the insert implementation for cassandra storage layer.
      * @return Insert implementation.
      * @throws StorageAccessException
