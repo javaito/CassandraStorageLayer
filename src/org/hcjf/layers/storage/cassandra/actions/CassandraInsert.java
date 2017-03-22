@@ -6,9 +6,7 @@ import org.hcjf.layers.storage.actions.ResultSet;
 import org.hcjf.layers.storage.actions.SingleResult;
 import org.hcjf.layers.storage.cassandra.CassandraStorageSession;
 
-import java.util.ArrayList;
-import java.util.Formatter;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author javaito
@@ -55,14 +53,7 @@ public class CassandraInsert extends Insert<CassandraStorageSession> {
             if(getSession().checkColumn(normalizedResourceName, normalizedStorageValueName)) {
                 valuesBuilder.append(separator).append(normalizedStorageValueName);
                 valuePlacesBuilder.append(separator).append("?");
-                value = getValues().get(storageValueName).getValue();
-                if(value != null) {
-                    if (value.getClass().isEnum()) {
-                        value = value.toString();
-                    } else if (value.getClass().equals(Class.class)) {
-                        value = ((Class) value).getName();
-                    }
-                }
+                value = checkValue(getValues().get(storageValueName).getValue());
                 values.add(value);
                 separator = ",";
             }
@@ -79,6 +70,30 @@ public class CassandraInsert extends Insert<CassandraStorageSession> {
             result = (R) sessionResultSet;
         }
 
+        return result;
+    }
+
+    private Object checkValue(Object value) {
+        Object result = value;
+        if(result != null) {
+            if (result.getClass().isEnum()) {
+                result = value.toString();
+            } else if (result.getClass().equals(Class.class)) {
+                result = ((Class) value).getName();
+            } else if (List.class.isAssignableFrom(result.getClass())) {
+                List newList = new ArrayList();
+                for(Object listValue : ((List)result)) {
+                    newList.add(checkValue(listValue));
+                }
+                result = newList;
+            } else if (Set.class.isAssignableFrom(result.getClass())) {
+                Set newSet = new TreeSet();
+                for(Object setValue : ((Set)result)) {
+                    newSet.add(checkValue(setValue));
+                }
+                result = newSet;
+            }
+        }
         return result;
     }
 
