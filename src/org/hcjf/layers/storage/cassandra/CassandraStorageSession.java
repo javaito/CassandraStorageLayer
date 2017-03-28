@@ -45,8 +45,9 @@ public class CassandraStorageSession extends StorageSession {
 
         long totalTime;
         long queryTime = totalTime = System.currentTimeMillis();
+        BoundStatement boundStatement = statement.bind(values.toArray());
         com.datastax.driver.core.ResultSet cassandraResultSet =
-                    session.execute(statement.bind(values.toArray()));
+                    session.execute(boundStatement);
         List<Row> rawRows = cassandraResultSet.all();
         queryTime = System.currentTimeMillis() - queryTime;
 
@@ -85,13 +86,23 @@ public class CassandraStorageSession extends StorageSession {
 
         Log.d(SystemProperties.get(CassandraProperties.CASSADNRA_STORAGE_LAYER_LOG_TAG),
                 "CQL: %s -> [Query Time: %d ms, Parsing Time: %d ms, Total time: %d ms, Result size: %d]",
-                statement.getQueryString(), queryTime, parsingTime, totalTime, rawRows.size());
+                toStringStatement(boundStatement), queryTime, parsingTime, totalTime, rawRows.size());
 
         try {
             return (R) result;
         } catch (ClassCastException ex) {
             throw new StorageAccessException("", ex);
         }
+    }
+
+    protected String toStringStatement(BoundStatement statement) {
+        StringBuilder builder = new StringBuilder(statement.preparedStatement().getQueryString());
+        int startIndex;
+        for(int i = 0; i < statement.preparedStatement().getVariables().size(); i++) {
+            startIndex = builder.indexOf("?");
+            builder.replace(startIndex, startIndex + 1, statement.getObject(i).toString());
+        }
+        return builder.toString();
     }
 
     /**
@@ -133,8 +144,9 @@ public class CassandraStorageSession extends StorageSession {
 
         long totalTime;
         long queryTime = totalTime = System.currentTimeMillis();
+        BoundStatement boundStatement = statement.bind(values.toArray());
         com.datastax.driver.core.ResultSet cassandraResultSet =
-                session.execute(statement.bind(values.toArray()));
+                session.execute(boundStatement);
         queryTime = System.currentTimeMillis() - queryTime;
 
         long parsingTime = System.currentTimeMillis();
@@ -171,7 +183,7 @@ public class CassandraStorageSession extends StorageSession {
 
         Log.d(SystemProperties.get(CassandraProperties.CASSADNRA_STORAGE_LAYER_LOG_TAG),
                 "CQL: %s -> [Query Time: %d ms, Parsing Time: %d ms, Total time: %d ms]",
-                statement.getQueryString(), queryTime, parsingTime, totalTime);
+                 toStringStatement(boundStatement), queryTime, parsingTime, totalTime);
 
         try {
             return (R) result;
