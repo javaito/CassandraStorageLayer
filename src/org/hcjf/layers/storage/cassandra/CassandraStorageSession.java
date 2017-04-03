@@ -100,7 +100,7 @@ public class CassandraStorageSession extends StorageSession {
         int startIndex;
         for(int i = 0; i < statement.preparedStatement().getVariables().size(); i++) {
             startIndex = builder.indexOf("?");
-            builder.replace(startIndex, startIndex + 1, statement.getObject(i).toString());
+            builder.replace(startIndex, startIndex + 1, statement.getObject(i) != null ? statement.getObject(i).toString() : "null");
         }
         return builder.toString();
     }
