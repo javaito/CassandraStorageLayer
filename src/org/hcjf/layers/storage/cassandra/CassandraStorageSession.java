@@ -28,7 +28,8 @@ import java.util.stream.Collectors;
  */
 public class CassandraStorageSession extends StorageSession {
 
-    private static final String SELECT_STATEMENT = "SELECT * FROM %s WHERE %s LIMIT %s;";
+    private static final String VALUES_INDEX = "values";
+    private static final String KEYS_INDEX = "keys";
 
     private final Session session;
     private final CassandraStorageLayer layer;
@@ -325,8 +326,19 @@ public class CassandraStorageSession extends StorageSession {
         List<String> result = new ArrayList<>();
         TableMetadata metadata = session.getCluster().getMetadata().
                 getKeyspace(layer.getKeySpace()).getTable(resourceName);
+        String target;
         for(IndexMetadata indexMetadata : metadata.getIndexes()) {
-            result.add(indexMetadata.getTarget());
+            target = indexMetadata.getTarget();
+            if(target.startsWith(VALUES_INDEX)) {
+                target = target.replace(VALUES_INDEX, Strings.EMPTY_STRING).
+                        replace(Strings.START_GROUP, Strings.EMPTY_STRING).
+                        replace(Strings.END_GROUP, Strings.EMPTY_STRING);
+            } else if(target.startsWith(KEYS_INDEX)) {
+                target = target.replace(KEYS_INDEX, Strings.EMPTY_STRING).
+                        replace(Strings.START_GROUP, Strings.EMPTY_STRING).
+                        replace(Strings.END_GROUP, Strings.EMPTY_STRING);
+            }
+            result.add(target);
         }
         return result;
     }
