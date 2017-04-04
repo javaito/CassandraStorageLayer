@@ -10,7 +10,7 @@ public class CassandraNaming extends NamingConsumer {
 
     public static final String CASSANDRA_NAMING_IMPL = "cassandra";
 
-    private static final char NAME_SEPARATOR = '_';
+    private static final String NAME_SEPARATOR = "_";
 
     public CassandraNaming() {
         super(CASSANDRA_NAMING_IMPL);
@@ -26,7 +26,7 @@ public class CassandraNaming extends NamingConsumer {
         StringBuilder result = new StringBuilder();
         char[] valueCharacters = value.toCharArray();
         char valueCharacter;
-        if(Arrays.binarySearch(valueCharacters, NAME_SEPARATOR) < 0) {
+        if(!value.contains(NAME_SEPARATOR)) {
             for (int i = 0; i < valueCharacters.length; i++) {
                 valueCharacter = valueCharacters[i];
                 if (Character.isUpperCase(valueCharacter)) {
@@ -41,7 +41,7 @@ public class CassandraNaming extends NamingConsumer {
         } else {
             for (int i = 0; i < valueCharacters.length; i++) {
                 valueCharacter = valueCharacters[i];
-                if (valueCharacter == NAME_SEPARATOR) {
+                if (valueCharacter == NAME_SEPARATOR.charAt(0)) {
                     result.append(Character.toUpperCase(valueCharacters[++i]));
                 } else {
                     result.append(valueCharacter);
