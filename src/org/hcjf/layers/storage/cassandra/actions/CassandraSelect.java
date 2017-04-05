@@ -14,10 +14,10 @@ import java.util.*;
  */
 public class CassandraSelect<C extends CassandraStorageSession> extends Select<C> {
 
-    private static final String SELECT_STATEMENT = "SELECT * FROM %s ";
-    private static final String SELECT_WHERE_STATEMENT = "WHERE %s ";
-    private static final String SELECT_LIMIT_STATEMENT = "LIMIT %s";
-    private static final String WHERE_SEPARATOR = " AND ";
+    protected static final String SELECT_STATEMENT = "SELECT * FROM %s ";
+    protected static final String SELECT_WHERE_STATEMENT = "WHERE %s ";
+    protected static final String SELECT_LIMIT_STATEMENT = "LIMIT %s";
+    protected static final String WHERE_SEPARATOR = " AND ";
 
     public CassandraSelect(C session) {
         super(session);
