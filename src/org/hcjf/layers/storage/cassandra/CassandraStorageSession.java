@@ -7,6 +7,7 @@ import org.hcjf.layers.query.Query;
 import org.hcjf.layers.storage.StorageAccessException;
 import org.hcjf.layers.storage.StorageSession;
 import org.hcjf.layers.storage.actions.*;
+import org.hcjf.layers.storage.cassandra.actions.CassandraDelete;
 import org.hcjf.layers.storage.cassandra.actions.CassandraInsert;
 import org.hcjf.layers.storage.cassandra.actions.CassandraSelect;
 import org.hcjf.layers.storage.cassandra.actions.CassandraUpdate;
@@ -377,5 +378,10 @@ public class CassandraStorageSession extends StorageSession {
         CassandraSelect result = new CassandraSelect(this);
         result.setQuery(query);
         return result;
+    }
+
+    @Override
+    public Delete delete(String storageName) throws StorageAccessException {
+        return new CassandraDelete(this);
     }
 }

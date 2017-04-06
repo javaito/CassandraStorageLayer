@@ -30,7 +30,11 @@ public class CassandraSelect<C extends CassandraStorageSession> extends Select<C
     }
 
     /**
-     * @return
+     * Creates the query execution for the cassandra engine implementation.
+     * @param params Query parameters.
+     * @param <R> Expected result set.
+     * @return Result set.
+     * @throws StorageAccessException
      */
     @Override
     public <R extends ResultSet> R execute(Object... params) throws StorageAccessException {
