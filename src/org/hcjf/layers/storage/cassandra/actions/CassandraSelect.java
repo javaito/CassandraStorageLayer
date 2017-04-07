@@ -1,13 +1,10 @@
 package org.hcjf.layers.storage.cassandra.actions;
 
-import com.sun.javafx.binding.StringFormatter;
 import org.hcjf.layers.query.*;
 import org.hcjf.layers.storage.StorageAccessException;
 import org.hcjf.layers.storage.actions.ResultSet;
 import org.hcjf.layers.storage.actions.Select;
 import org.hcjf.layers.storage.cassandra.CassandraStorageSession;
-import org.hcjf.names.CassandraNaming;
-import org.hcjf.names.Naming;
 
 import java.util.*;
 
@@ -15,14 +12,14 @@ import java.util.*;
  * @author javaito
  * @mail javaito@gmail.com
  */
-public class CassandraSelect extends Select<CassandraStorageSession> {
+public class CassandraSelect<C extends CassandraStorageSession> extends Select<C> {
 
-    private static final String SELECT_STATEMENT = "SELECT * FROM %s ";
-    private static final String SELECT_WHERE_STATEMENT = "WHERE %s ";
-    private static final String SELECT_LIMIT_STATEMENT = "LIMIT %s";
-    private static final String WHERE_SEPARATOR = " AND ";
+    protected static final String SELECT_STATEMENT = "SELECT * FROM %s ";
+    protected static final String SELECT_WHERE_STATEMENT = "WHERE %s ";
+    protected static final String SELECT_LIMIT_STATEMENT = "LIMIT %s";
+    protected static final String WHERE_SEPARATOR = " AND ";
 
-    public CassandraSelect(CassandraStorageSession session) {
+    public CassandraSelect(C session) {
         super(session);
     }
 
@@ -33,7 +30,11 @@ public class CassandraSelect extends Select<CassandraStorageSession> {
     }
 
     /**
-     * @return
+     * Creates the query execution for the cassandra engine implementation.
+     * @param params Query parameters.
+     * @param <R> Expected result set.
+     * @return Result set.
+     * @throws StorageAccessException
      */
     @Override
     public <R extends ResultSet> R execute(Object... params) throws StorageAccessException {
