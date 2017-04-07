@@ -3,13 +3,13 @@ package org.hcjf.layers.storage.cassandra.actions;
 import org.hcjf.layers.storage.StorageAccessException;
 import org.hcjf.layers.storage.actions.*;
 import org.hcjf.layers.storage.cassandra.CassandraStorageSession;
+import org.hcjf.layers.storage.cassandra.properties.CassandraProperties;
+import org.hcjf.log.Log;
 import org.hcjf.properties.SystemProperties;
 import org.hcjf.utils.Introspection;
 import org.hcjf.utils.Strings;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * This class implements the delete operation for cassandra.
@@ -46,7 +46,7 @@ public class CassandraDelete extends Delete<CassandraStorageSession> {
         } else if(getResourceName() != null) {
             resourceName = getSession().normalizeName(getResourceName());
         } else {
-            throw new StorageAccessException("");
+            throw new StorageAccessException("Resource name not found");
         }
 
         //Obtains the partitions keys and clustering keys for the specific resource.
@@ -54,19 +54,22 @@ public class CassandraDelete extends Delete<CassandraStorageSession> {
         keys.addAll(getSession().getClusteringKey(getSession().normalizeName(resourceName)));
 
         //Creates the base statement for all the deletes.
-        String separator = Strings.EMPTY_STRING;
-        StringBuilder whereBuilder = new StringBuilder();
+        Strings.Builder whereBuilder = new Strings.Builder();
         for(String key : keys) {
             whereBuilder.append(key).append(SystemProperties.get(SystemProperties.Query.ReservedWord.EQUALS));
             whereBuilder.append(Strings.WHITE_SPACE).append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE));
-            whereBuilder.append(Strings.WHITE_SPACE).append(separator);
-            separator = SystemProperties.get(SystemProperties.Query.ReservedWord.AND);
+            whereBuilder.append(Strings.WHITE_SPACE, SystemProperties.get(SystemProperties.Query.ReservedWord.AND));
         }
+
+        //Creates statement string
         String statement = String.format(DELETE_STATEMENT, resourceName, whereBuilder.toString());
 
         //Creates a list to store the values for the delete statement.
         List<Object> values = new ArrayList<>();
+
+        //These collections are for store the deleted objects.
         List<Object> resultCollection = getResultType() != null ? new ArrayList<>() : null;
+        List<Map<String, Object>> resultMap = getResultType() == null ? new ArrayList<>() : null;
         for (Map<String, Object> row : selectResultSet.getResult()) {
             try {
                 //The values list is cleared for each row then put in the list the current row values.
@@ -82,14 +85,19 @@ public class CassandraDelete extends Delete<CassandraStorageSession> {
                 //the result list.
                 if (getResultType() != null) {
                     resultCollection.add(Introspection.toInstance(row, getResultType()));
+                } else {
+                    resultMap.add(row);
                 }
-            } catch (Exception ex){}
+            } catch (Exception ex){
+                Log.w(SystemProperties.get(CassandraProperties.CASSADNRA_STORAGE_LAYER_LOG_TAG),
+                        "Unable to delete row %s", row.toString());
+            }
         }
 
         if(getResultType() != null) {
             resultSet = (R) new CollectionResultSet(resultCollection);
         } else {
-            resultSet = (R) selectResultSet;
+            resultSet = (R) new MapResultSet(resultMap);
         }
 
         return resultSet;

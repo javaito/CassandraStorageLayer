@@ -5,10 +5,13 @@ import org.hcjf.layers.storage.actions.Insert;
 import org.hcjf.layers.storage.actions.ResultSet;
 import org.hcjf.layers.storage.actions.SingleResult;
 import org.hcjf.layers.storage.cassandra.CassandraStorageSession;
+import org.hcjf.properties.SystemProperties;
+import org.hcjf.utils.Strings;
 
 import java.util.*;
 
 /**
+ * This class implements the insert operation for cassandra data base.
  * @author javaito
  * @mail javaito@gmail.com
  */
@@ -34,34 +37,34 @@ public class CassandraInsert extends Insert<CassandraStorageSession> {
     }
 
     /**
-     *
-     * @param <R>
-     * @return
+     * This method create the insert statement for the cassandra data base an execute the statement.
+     * @param <R> Expected result set.
+     * @return Return the inserted objects.
      * @throws StorageAccessException
      */
     @Override
     public <R extends ResultSet> R execute(Object... params) throws StorageAccessException {
-        StringBuilder valuesBuilder = new StringBuilder();
-        String separator = "";
-        StringBuilder valuePlacesBuilder = new StringBuilder();
+        //Builder to create 'values' body for insert statement.
+        Strings.Builder valuesBuilder = new Strings.Builder();
+        //Builder to create paces body for insert statement.
+        Strings.Builder valuePlacesBuilder = new Strings.Builder();
+        //List of values to execute the insert statement
         List<Object> values = new ArrayList<>();
+
         String normalizedResourceName = getSession().normalizeName(getResourceName());
         String normalizedStorageValueName;
-        Object value;
         for(String storageValueName : getValues().keySet()) {
             normalizedStorageValueName = getSession().normalizeName(storageValueName);
             if(getSession().checkColumn(normalizedResourceName, normalizedStorageValueName)) {
-                valuesBuilder.append(separator).append(normalizedStorageValueName);
-                valuePlacesBuilder.append(separator).append("?");
-                value = checkValue(getValues().get(storageValueName).getValue());
-                values.add(value);
-                separator = ",";
+                valuesBuilder.append(normalizedStorageValueName, Strings.ARGUMENT_SEPARATOR);
+                valuePlacesBuilder.append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE), Strings.ARGUMENT_SEPARATOR);
+                values.add(getSession().checkUpdateValue(getValues().get(storageValueName).getValue()));
             }
         }
 
-        String cqlStatement = String.format(
-                INSERT_STATEMENT, normalizedResourceName, valuesBuilder.toString(), valuePlacesBuilder.toString()).toString();
-        ResultSet sessionResultSet = getSession().execute(cqlStatement, values, getResultType());
+        String statement = String.format(
+                INSERT_STATEMENT, normalizedResourceName, valuesBuilder.toString(), valuePlacesBuilder.toString());
+        ResultSet sessionResultSet = getSession().execute(statement, values, getResultType());
 
         R result;
         if(addedInstance != null) {
@@ -70,30 +73,6 @@ public class CassandraInsert extends Insert<CassandraStorageSession> {
             result = (R) sessionResultSet;
         }
 
-        return result;
-    }
-
-    protected Object checkValue(Object value) {
-        Object result = value;
-        if(result != null) {
-            if (result.getClass().isEnum()) {
-                result = value.toString();
-            } else if (result.getClass().equals(Class.class)) {
-                result = ((Class) value).getName();
-            } else if (List.class.isAssignableFrom(result.getClass())) {
-                List newList = new ArrayList();
-                for(Object listValue : ((List)result)) {
-                    newList.add(checkValue(listValue));
-                }
-                result = newList;
-            } else if (Set.class.isAssignableFrom(result.getClass())) {
-                Set newSet = new TreeSet();
-                for(Object setValue : ((Set)result)) {
-                    newSet.add(checkValue(setValue));
-                }
-                result = newSet;
-            }
-        }
         return result;
     }
 

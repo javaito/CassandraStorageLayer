@@ -1,8 +1,8 @@
 package org.hcjf.names;
 
-import java.util.Arrays;
-
 /**
+ * This naming consumer transform the camel case format to cassandra and vice versa
+ * format all the resources name.
  * @author javaito
  * @mail javaito@gmail.com
  */
@@ -17,9 +17,13 @@ public class CassandraNaming extends NamingConsumer {
     }
 
     /**
-     *
-     * @param value
-     * @return
+     * Normalize the name.
+     * If the name is in came case this method transform all the upper case character in
+     * a name separator character ('_') follow by the same character in lower case.
+     * If the name is in the data base format, transform all the name separator characters ('_') in
+     * a next character in upper case and delete the name separator character.
+     * @param value Value to will be normalized.
+     * @return Normalized value.
      */
     @Override
     public String normalize(String value) {
