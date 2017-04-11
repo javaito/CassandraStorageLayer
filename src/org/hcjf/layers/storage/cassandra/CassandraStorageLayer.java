@@ -21,6 +21,7 @@ import java.util.Formatter;
 import java.util.List;
 
 /**
+ * This class implements the storage layer to work with cassandra data base.
  * @author javaito
  * @mail javaito@gmail.com
  */
@@ -50,8 +51,17 @@ public abstract class CassandraStorageLayer<S extends CassandraStorageSession> e
         return createSessionInstance(getImplName());
     }
 
+    /**
+     * This method must be implemented to indicate which implementation of
+     * cassandra session will be use the storage layer implementation.
+     * @param implName Implementation name.
+     * @return Cassandra session implementation instance.
+     */
     protected abstract S createSessionInstance(String implName);
 
+    /**
+     * Creates a cassandra cluster client.
+     */
     private synchronized void createCluster() {
         PoolingOptions poolingOptions = new PoolingOptions();
         poolingOptions
@@ -81,8 +91,8 @@ public abstract class CassandraStorageLayer<S extends CassandraStorageSession> e
     }
 
     /**
-     *
-     * @return
+     * Creates and returns a cassandra session instance.
+     * @return Cassandra session instance.
      */
     protected synchronized Session getCassandraSession() {
         if(cluster.isClosed()) {

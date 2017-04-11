@@ -23,7 +23,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- *
+ * This class implements the session for the cassandra storage layer implementation.
  * @author javaito
  * @mail javaito@gmail.com
  */
@@ -358,6 +358,37 @@ public class CassandraStorageSession extends StorageSession {
     }
 
     /**
+     * This method check if the value to update is compatible with the cassandra
+     * data types.
+     * In the case that the value is a collection or map, this method is recursive.
+     * @param value Value to check.
+     * @return Return the object to be updated.
+     */
+    public final Object checkUpdateValue(Object value) {
+        Object result = value;
+        if(result != null) {
+            if (result.getClass().isEnum()) {
+                result = value.toString();
+            } else if (result.getClass().equals(Class.class)) {
+                result = ((Class) value).getName();
+            } else if (List.class.isAssignableFrom(result.getClass())) {
+                List newList = new ArrayList();
+                for(Object listValue : ((List)result)) {
+                    newList.add(checkUpdateValue(listValue));
+                }
+                result = newList;
+            } else if (Set.class.isAssignableFrom(result.getClass())) {
+                Set newSet = new TreeSet();
+                for(Object setValue : ((Set)result)) {
+                    newSet.add(checkUpdateValue(setValue));
+                }
+                result = newSet;
+            }
+        }
+        return result;
+    }
+
+    /**
      * Return the insert implementation for cassandra storage layer.
      * @return Insert implementation.
      * @throws StorageAccessException
@@ -365,6 +396,19 @@ public class CassandraStorageSession extends StorageSession {
     @Override
     public Insert insert() throws StorageAccessException {
         return new CassandraInsert(this);
+    }
+
+    /**
+     * Return the insert implementation for cassandra storage layer and set the object to store.
+     * @param object Object to store.
+     * @return Insert implementation.
+     * @throws StorageAccessException
+     */
+    @Override
+    public Insert insert(Object object) throws StorageAccessException {
+        Insert insert = insert();
+        insert.add(object);
+        return insert;
     }
 
     /**
@@ -380,8 +424,45 @@ public class CassandraStorageSession extends StorageSession {
         return result;
     }
 
+    /**
+     * Return the delete implementation for cassandra storage layer.
+     * @param query Query to filter the delete operation.
+     * @return Delete implementation.
+     * @throws StorageAccessException
+     */
     @Override
-    public Delete delete(String storageName) throws StorageAccessException {
-        return new CassandraDelete(this);
+    public Delete delete(Query query) throws StorageAccessException {
+        CassandraDelete delete = new CassandraDelete(this);
+        delete.setQuery(query);
+        return delete;
+    }
+
+    /**
+     * Return the update implementation for cassandra storage layer.
+     * @param query Query to filter the update operation.
+     * @return Update implementation.
+     * @throws StorageAccessException
+     */
+    @Override
+    public Update update(Query query) throws StorageAccessException {
+        CassandraUpdate update = new CassandraUpdate(this);
+        update.setQuery(query);
+        return update;
+    }
+
+    /**
+     * Return the update implementation for cassandra storage layer.
+     * @param query Query to filter the update operation.
+     * @param values Values to will be updated
+     * @return Update implementation.
+     * @throws StorageAccessException
+     */
+    @Override
+    public Update update(Query query, Map<String, Object> values) throws StorageAccessException {
+        Update update = update(query);
+        for(String key : values.keySet()) {
+            update.add(key, values.get(key));
+        }
+        return update;
     }
 }
