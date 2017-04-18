@@ -41,6 +41,16 @@ public class CassandraStorageSession extends StorageSession {
         this.layer = layer;
     }
 
+    /**
+     * This method execute a query
+     * @param query
+     * @param cqlStatement
+     * @param values
+     * @param resultType
+     * @param <R>
+     * @return
+     * @throws StorageAccessException
+     */
     public <R extends org.hcjf.layers.storage.actions.ResultSet> R executeQuery(
             Query query, String cqlStatement, List<Object> values, Class resultType) throws StorageAccessException {
         PreparedStatement statement = session.prepare(cqlStatement);
@@ -97,6 +107,11 @@ public class CassandraStorageSession extends StorageSession {
         }
     }
 
+    /**
+     * Creates the string representation of te cql statement.
+     * @param statement Cql statement.
+     * @return String representation.
+     */
     protected String toStringStatement(BoundStatement statement) {
         StringBuilder builder = new StringBuilder(statement.preparedStatement().getQueryString());
         int startIndex;
@@ -208,8 +223,8 @@ public class CassandraStorageSession extends StorageSession {
 
         try {
             instance = resultType.newInstance();
-        } catch (Exception e) {
-            throw new StorageAccessException("");
+        } catch (Exception ex) {
+            throw new StorageAccessException("Unable to create instance", ex);
         }
 
         Map<String, Introspection.Setter> setters = Introspection.getSetters(resultType,layer.getNamingImplName());
@@ -227,7 +242,8 @@ public class CassandraStorageSession extends StorageSession {
                         setter.invoke(instance, rowValue);
                     }
                 } catch (Exception ex) {
-                    throw new StorageAccessException("", ex);
+                    Log.d(SystemProperties.get(CassandraProperties.CASSADNRA_STORAGE_LAYER_LOG_TAG),
+                            "Unable to set value", ex);
                 }
             }
         }
@@ -426,6 +442,19 @@ public class CassandraStorageSession extends StorageSession {
 
     /**
      * Return the delete implementation for cassandra storage layer.
+     * @param instance Instance that will be deleted.
+     * @return Delete implementation.
+     * @throws StorageAccessException
+     */
+    @Override
+    public Delete delete(Object instance) throws StorageAccessException {
+        CassandraDelete delete = new CassandraDelete(this);
+        delete.add(instance);
+        return delete;
+    }
+
+    /**
+     * Return the delete implementation for cassandra storage layer.
      * @param query Query to filter the delete operation.
      * @return Delete implementation.
      * @throws StorageAccessException
@@ -435,6 +464,58 @@ public class CassandraStorageSession extends StorageSession {
         CassandraDelete delete = new CassandraDelete(this);
         delete.setQuery(query);
         return delete;
+    }
+
+    /**
+     * Return the delete implementation for cassandra storage layer.
+     * @return Delete implementation.
+     * @throws StorageAccessException
+     */
+    @Override
+    public Delete delete() throws StorageAccessException {
+        CassandraDelete delete = new CassandraDelete(this);
+        return delete;
+    }
+
+    /**
+     * Return the update implementation for cassandra storage layer.
+     * @return Update implementation.
+     * @throws StorageAccessException
+     */
+    @Override
+    public Update update() throws StorageAccessException {
+        CassandraUpdate update = new CassandraUpdate(this);
+        return update;
+    }
+
+    /**
+     * Return the update implementation for cassandra storage layer.
+     * @param  instance Instance that will be updated.
+     * @return Update implementation.
+     * @throws StorageAccessException
+     */
+    @Override
+    public Update update(Object instance) throws StorageAccessException {
+        CassandraUpdate update = new CassandraUpdate(this);
+        update.add(instance);
+        return update;
+    }
+
+    /**
+     * Return the update implementation for cassandra storage layer.
+     * @param instance Instance that will be updated.
+     * @param values Values to will be updated
+     * @return Update implementation.
+     * @throws StorageAccessException
+     */
+    @Override
+    public Update update(Object instance, Map<String, Object> values) throws StorageAccessException {
+        CassandraUpdate update = new CassandraUpdate(this);
+        update.add(instance);
+        for(String key : values.keySet()) {
+            update.add(key, values.get(key));
+        }
+        return update;
     }
 
     /**

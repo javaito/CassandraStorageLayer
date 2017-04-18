@@ -20,8 +20,20 @@ public class CassandraDelete extends Delete<CassandraStorageSession> {
 
     private static final String DELETE_STATEMENT = "DELETE FROM %s WHERE %s";
 
+    private final List<Object> deleteInstances;
+
     public CassandraDelete(CassandraStorageSession session) {
         super(session);
+        deleteInstances = new ArrayList<>();
+    }
+
+    /**
+     * Store the added object for gonna be deleted.
+     * @param object Added object.
+     */
+    @Override
+    protected void onAdd(Object object) {
+        deleteInstances.add(object);
     }
 
     /**
@@ -35,10 +47,6 @@ public class CassandraDelete extends Delete<CassandraStorageSession> {
     @Override
     public <R extends ResultSet> R execute(Object... params) throws StorageAccessException {
         R resultSet;
-
-        //Make cassandra select
-        Select select = getSession().select(getQuery());
-        MapResultSet selectResultSet = (MapResultSet) select.execute(params);
 
         String resourceName;
         if(getResultType() != null) {
@@ -70,28 +78,57 @@ public class CassandraDelete extends Delete<CassandraStorageSession> {
         //These collections are for store the deleted objects.
         List<Object> resultCollection = getResultType() != null ? new ArrayList<>() : null;
         List<Map<String, Object>> resultMap = getResultType() == null ? new ArrayList<>() : null;
-        for (Map<String, Object> row : selectResultSet.getResult()) {
-            try {
-                //The values list is cleared for each row then put in the list the current row values.
-                values.clear();
-                for (String key : keys) {
-                    values.add(row.get(getSession().normalizeName(key)));
-                }
 
-                //Execute the delete statement.
-                getSession().execute(statement, values, getResultType());
+        if(!deleteInstances.isEmpty()) {
+            for(Object deleteInstance : deleteInstances) {
+                try {
+                    //The values list is cleared for each row then put in the list the current row values.
+                    values.clear();
 
-                //If the expected type is a specific object then creates an instance foreach row and put it into
-                //the result list.
-                if (getResultType() != null) {
-                    resultCollection.add(Introspection.toInstance(row, getResultType()));
-                } else {
-                    resultMap.add(row);
+                    Map<String, Introspection.Getter> instanceGetters = Introspection.getGetters(deleteInstance.getClass());
+                    for (String key : keys) {
+                        values.add(instanceGetters.get(getSession().normalizeName(key)).get(deleteInstance));
+                    }
+
+                    //Execute the delete statement.
+                    getSession().execute(statement, values, getResultType());
+
+                    resultCollection.add(deleteInstance);
+                } catch (Exception ex) {
+                    Log.w(SystemProperties.get(CassandraProperties.CASSADNRA_STORAGE_LAYER_LOG_TAG),
+                            "Unable to delete instance %s", deleteInstance.toString());
                 }
-            } catch (Exception ex){
-                Log.w(SystemProperties.get(CassandraProperties.CASSADNRA_STORAGE_LAYER_LOG_TAG),
-                        "Unable to delete row %s", row.toString());
             }
+        } else if(getQuery() != null) {
+            //Make cassandra select
+            Select select = getSession().select(getQuery());
+            MapResultSet selectResultSet = (MapResultSet) select.execute(params);
+
+            for (Map<String, Object> row : selectResultSet.getResult()) {
+                try {
+                    //The values list is cleared for each row then put in the list the current row values.
+                    values.clear();
+                    for (String key : keys) {
+                        values.add(row.get(getSession().normalizeName(key)));
+                    }
+
+                    //Execute the delete statement.
+                    getSession().execute(statement, values, getResultType());
+
+                    //If the expected type is a specific object then creates an instance foreach row and put it into
+                    //the result list.
+                    if (getResultType() != null) {
+                        resultCollection.add(Introspection.toInstance(row, getResultType()));
+                    } else {
+                        resultMap.add(row);
+                    }
+                } catch (Exception ex){
+                    Log.w(SystemProperties.get(CassandraProperties.CASSADNRA_STORAGE_LAYER_LOG_TAG),
+                            "Unable to delete row %s", row.toString());
+                }
+            }
+        } else {
+            throw new IllegalArgumentException("To delete information you must specify a query or instance to delete");
         }
 
         if(getResultType() != null) {
