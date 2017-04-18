@@ -56,9 +56,9 @@ public class CassandraDelete extends Delete<CassandraStorageSession> {
         //Creates the base statement for all the deletes.
         Strings.Builder whereBuilder = new Strings.Builder();
         for(String key : keys) {
-            whereBuilder.append(key).append(SystemProperties.get(SystemProperties.Query.ReservedWord.EQUALS));
+            whereBuilder.append(key).append(Strings.WHITE_SPACE).append(SystemProperties.get(SystemProperties.Query.ReservedWord.EQUALS));
             whereBuilder.append(Strings.WHITE_SPACE).append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE));
-            whereBuilder.append(Strings.WHITE_SPACE, SystemProperties.get(SystemProperties.Query.ReservedWord.AND));
+            whereBuilder.append(Strings.WHITE_SPACE, SystemProperties.get(SystemProperties.Query.ReservedWord.AND), Strings.WHITE_SPACE);
         }
 
         //Creates statement string
