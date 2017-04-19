@@ -113,7 +113,7 @@ public class CassandraSelect<C extends CassandraStorageSession> extends Select<C
                     Object[] collection = (Object[]) valuesByName.get(fieldName).get(0);
                     for (Object object : collection) {
                         cqlWhereStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE),
-                                Strings.WHITE_SPACE, Strings.WHITE_SPACE, Strings.ARGUMENT_SEPARATOR);
+                                Strings.WHITE_SPACE, Strings.ARGUMENT_SEPARATOR);
                         values.add(object);
                     }
                     cqlWhereStatement.cleanBuffer();
