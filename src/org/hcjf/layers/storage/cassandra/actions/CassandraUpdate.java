@@ -68,11 +68,9 @@ public class CassandraUpdate extends Update<CassandraStorageSession> {
         //Creates the assignations body of the update operation.
         Strings.Builder setBuilder = new Strings.Builder();
         for(String fieldName : getValues().keySet()) {
-            if(getValues().containsKey(fieldName)) {
-                setBuilder.append(getSession().normalizeName(fieldName)).append(Strings.ASSIGNATION).append(Strings.WHITE_SPACE);
-                setBuilder.append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE), Strings.ARGUMENT_SEPARATOR, Strings.WHITE_SPACE);
-                baseValues.add(getSession().checkUpdateValue(getValues().get(fieldName).getValue()));
-            }
+            setBuilder.append(getSession().normalizeName(fieldName)).append(Strings.ASSIGNATION).append(Strings.WHITE_SPACE);
+            setBuilder.append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE), Strings.ARGUMENT_SEPARATOR, Strings.WHITE_SPACE);
+            baseValues.add(getSession().checkUpdateValue(getValues().get(fieldName).getValue()));
         }
 
         //Creates the conditions body of the update operation.
