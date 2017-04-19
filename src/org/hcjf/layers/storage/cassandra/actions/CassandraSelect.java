@@ -68,35 +68,35 @@ public class CassandraSelect<C extends CassandraStorageSession> extends Select<C
                 cqlWhereStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.EQUALS));
                 cqlWhereStatement.append(Strings.WHITE_SPACE);
                 cqlWhereStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE),
-                        SystemProperties.get(SystemProperties.Query.ReservedWord.AND), Strings.WHITE_SPACE);
+                        Strings.WHITE_SPACE, SystemProperties.get(SystemProperties.Query.ReservedWord.AND), Strings.WHITE_SPACE);
                 values.add(valuesByName.get(fieldName).get(0));
             } else if(GreaterThan.class.equals(evaluatorClass)) {
                 cqlWhereStatement.append(fieldName).append(Strings.WHITE_SPACE);
                 cqlWhereStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.GREATER_THAN));
                 cqlWhereStatement.append(Strings.WHITE_SPACE);
                 cqlWhereStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE),
-                        SystemProperties.get(SystemProperties.Query.ReservedWord.AND), Strings.WHITE_SPACE);
+                        Strings.WHITE_SPACE, SystemProperties.get(SystemProperties.Query.ReservedWord.AND), Strings.WHITE_SPACE);
                 values.add(valuesByName.get(fieldName).get(0));
             } else if(GreaterThanOrEqual.class.equals(evaluatorClass)) {
                 cqlWhereStatement.append(fieldName).append(Strings.WHITE_SPACE);
                 cqlWhereStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.GREATER_THAN_OR_EQUALS));
                 cqlWhereStatement.append(Strings.WHITE_SPACE);
                 cqlWhereStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE),
-                        SystemProperties.get(SystemProperties.Query.ReservedWord.AND), Strings.WHITE_SPACE);
+                        Strings.WHITE_SPACE, SystemProperties.get(SystemProperties.Query.ReservedWord.AND), Strings.WHITE_SPACE);
                 values.add(valuesByName.get(fieldName).get(0));
             } else if(SmallerThan.class.equals(evaluatorClass)) {
                 cqlWhereStatement.append(fieldName).append(Strings.WHITE_SPACE);
                 cqlWhereStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.SMALLER_THAN));
                 cqlWhereStatement.append(Strings.WHITE_SPACE);
                 cqlWhereStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE),
-                        SystemProperties.get(SystemProperties.Query.ReservedWord.AND), Strings.WHITE_SPACE);
+                        Strings.WHITE_SPACE, SystemProperties.get(SystemProperties.Query.ReservedWord.AND), Strings.WHITE_SPACE);
                 values.add(valuesByName.get(fieldName).get(0));
             } else if(SmallerThanOrEqual.class.equals(evaluatorClass)) {
                 cqlWhereStatement.append(fieldName).append(Strings.WHITE_SPACE);
                 cqlWhereStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.SMALLER_THAN_OR_EQUALS));
                 cqlWhereStatement.append(Strings.WHITE_SPACE);
                 cqlWhereStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE),
-                        SystemProperties.get(SystemProperties.Query.ReservedWord.AND), Strings.WHITE_SPACE);
+                        Strings.WHITE_SPACE, SystemProperties.get(SystemProperties.Query.ReservedWord.AND), Strings.WHITE_SPACE);
                 values.add(valuesByName.get(fieldName).get(0));
             } else if(In.class.equals(evaluatorClass)) {
                 if(getSession().getColumnDataType(normalizedResourceName, fieldName).isCollection()) {
@@ -104,7 +104,7 @@ public class CassandraSelect<C extends CassandraStorageSession> extends Select<C
                     cqlWhereStatement.append(CONTAINS_RESERVED_WORD);
                     cqlWhereStatement.append(Strings.WHITE_SPACE);
                     cqlWhereStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE),
-                            SystemProperties.get(SystemProperties.Query.ReservedWord.AND), Strings.WHITE_SPACE);
+                            Strings.WHITE_SPACE, SystemProperties.get(SystemProperties.Query.ReservedWord.AND), Strings.WHITE_SPACE);
                     values.add(valuesByName.get(fieldName).get(0));
                 } else {
                     cqlWhereStatement.append(fieldName).append(Strings.WHITE_SPACE);
@@ -118,7 +118,7 @@ public class CassandraSelect<C extends CassandraStorageSession> extends Select<C
                     }
                     cqlWhereStatement.cleanBuffer();
                     cqlWhereStatement.append(Strings.WHITE_SPACE).append(Strings.END_GROUP,
-                            SystemProperties.get(SystemProperties.Query.ReservedWord.AND), Strings.WHITE_SPACE);
+                            Strings.WHITE_SPACE, SystemProperties.get(SystemProperties.Query.ReservedWord.AND), Strings.WHITE_SPACE);
                 }
             }
         }
