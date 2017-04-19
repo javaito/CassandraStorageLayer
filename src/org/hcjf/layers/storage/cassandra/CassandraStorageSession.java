@@ -1,7 +1,6 @@
 package org.hcjf.layers.storage.cassandra;
 
 import com.datastax.driver.core.*;
-import com.datastax.driver.core.ResultSet;
 import org.hcjf.layers.query.JoinableMap;
 import org.hcjf.layers.query.Query;
 import org.hcjf.layers.storage.StorageAccessException;
@@ -96,7 +95,7 @@ public class CassandraStorageSession extends StorageSession {
         parsingTime = System.currentTimeMillis() - parsingTime;
         totalTime = System.currentTimeMillis() - totalTime;
 
-        Log.d(SystemProperties.get(CassandraProperties.CASSADNRA_STORAGE_LAYER_LOG_TAG),
+        Log.d(SystemProperties.get(CassandraProperties.CASSANDRA_STORAGE_LAYER_LOG_TAG),
                 "CQL: %s -> [Query Time: %d ms, Parsing Time: %d ms, Total time: %d ms, Result size: %d]",
                 toStringStatement(boundStatement), queryTime, parsingTime, totalTime, rawRows.size());
 
@@ -198,7 +197,7 @@ public class CassandraStorageSession extends StorageSession {
         parsingTime = System.currentTimeMillis() - parsingTime;
         totalTime = System.currentTimeMillis() - totalTime;
 
-        Log.d(SystemProperties.get(CassandraProperties.CASSADNRA_STORAGE_LAYER_LOG_TAG),
+        Log.d(SystemProperties.get(CassandraProperties.CASSANDRA_STORAGE_LAYER_LOG_TAG),
                 "CQL: %s -> [Query Time: %d ms, Parsing Time: %d ms, Total time: %d ms]",
                  toStringStatement(boundStatement), queryTime, parsingTime, totalTime);
 
@@ -242,7 +241,7 @@ public class CassandraStorageSession extends StorageSession {
                         setter.invoke(instance, rowValue);
                     }
                 } catch (Exception ex) {
-                    Log.d(SystemProperties.get(CassandraProperties.CASSADNRA_STORAGE_LAYER_LOG_TAG),
+                    Log.d(SystemProperties.get(CassandraProperties.CASSANDRA_STORAGE_LAYER_LOG_TAG),
                             "Unable to set value", ex);
                 }
             }

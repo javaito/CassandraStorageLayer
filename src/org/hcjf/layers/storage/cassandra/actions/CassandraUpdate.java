@@ -8,7 +8,6 @@ import org.hcjf.log.Log;
 import org.hcjf.properties.SystemProperties;
 import org.hcjf.utils.Introspection;
 import org.hcjf.utils.Strings;
-import sun.swing.BakedArrayList;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,7 +80,7 @@ public class CassandraUpdate extends Update<CassandraStorageSession> {
         for(String key : keys) {
             whereBuilder.append(key).append(SystemProperties.get(SystemProperties.Query.ReservedWord.EQUALS));
             whereBuilder.append(Strings.WHITE_SPACE).append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE));
-            whereBuilder.append(Strings.WHITE_SPACE, SystemProperties.get(SystemProperties.Query.ReservedWord.AND));
+            whereBuilder.append(Strings.WHITE_SPACE, SystemProperties.get(SystemProperties.Query.ReservedWord.AND), Strings.WHITE_SPACE);
         }
 
         //Creates statement string
@@ -91,10 +90,12 @@ public class CassandraUpdate extends Update<CassandraStorageSession> {
         List<Object> values = new ArrayList<>();
 
         //These collections are for store the deleted objects.
-        List<Object> resultCollection = getResultType() != null ? new ArrayList<>() : null;
-        List<Map<String, Object>> resultMap = getResultType() == null ? new ArrayList<>() : null;
+        List<Object> resultCollection;
+        List<Map<String, Object>> resultMap;
 
         if(!updateInstances.isEmpty()) {
+            resultCollection = new ArrayList<>();
+            resultMap = null;
             for(Object updateInstance : updateInstances) {
                 try {
                     //The values list is cleared for each row then put in the list the current row values.
@@ -111,11 +112,13 @@ public class CassandraUpdate extends Update<CassandraStorageSession> {
 
                     resultCollection.add(updateInstance);
                 } catch (Exception ex) {
-                    Log.w(SystemProperties.get(CassandraProperties.CASSADNRA_STORAGE_LAYER_LOG_TAG),
+                    Log.w(SystemProperties.get(CassandraProperties.CASSANDRA_STORAGE_LAYER_LOG_TAG),
                             "Unable to delete instance %s", updateInstance.toString());
                 }
             }
         } else {
+            resultCollection = getResultType() != null ? new ArrayList<>() : null;
+            resultMap = getResultType() == null ? new ArrayList<>() : null;
             //Make cassandra select
             Select select = getSession().select(getQuery());
             MapResultSet selectResultSet = (MapResultSet) select.execute(params);
@@ -140,13 +143,13 @@ public class CassandraUpdate extends Update<CassandraStorageSession> {
                         resultMap.add(row);
                     }
                 } catch (Exception ex) {
-                    Log.w(SystemProperties.get(CassandraProperties.CASSADNRA_STORAGE_LAYER_LOG_TAG),
+                    Log.w(SystemProperties.get(CassandraProperties.CASSANDRA_STORAGE_LAYER_LOG_TAG),
                             "Unable to update row %s", row.toString());
                 }
             }
         }
 
-        if(getResultType() != null) {
+        if(resultCollection != null) {
             resultSet = (R) new CollectionResultSet(resultCollection);
         } else {
             resultSet = (R) new MapResultSet(resultMap);

@@ -76,10 +76,12 @@ public class CassandraDelete extends Delete<CassandraStorageSession> {
         List<Object> values = new ArrayList<>();
 
         //These collections are for store the deleted objects.
-        List<Object> resultCollection = getResultType() != null ? new ArrayList<>() : null;
-        List<Map<String, Object>> resultMap = getResultType() == null ? new ArrayList<>() : null;
+        List<Object> resultCollection;
+        List<Map<String, Object>> resultMap;
 
         if(!deleteInstances.isEmpty()) {
+            resultCollection = new ArrayList<>();
+            resultMap = null;
             for(Object deleteInstance : deleteInstances) {
                 try {
                     //The values list is cleared for each row then put in the list the current row values.
@@ -95,11 +97,13 @@ public class CassandraDelete extends Delete<CassandraStorageSession> {
 
                     resultCollection.add(deleteInstance);
                 } catch (Exception ex) {
-                    Log.w(SystemProperties.get(CassandraProperties.CASSADNRA_STORAGE_LAYER_LOG_TAG),
+                    Log.w(SystemProperties.get(CassandraProperties.CASSANDRA_STORAGE_LAYER_LOG_TAG),
                             "Unable to delete instance %s", deleteInstance.toString());
                 }
             }
         } else if(getQuery() != null) {
+            resultCollection = getResultType() != null ? new ArrayList<>() : null;
+            resultMap = getResultType() == null ? new ArrayList<>() : null;
             //Make cassandra select
             Select select = getSession().select(getQuery());
             MapResultSet selectResultSet = (MapResultSet) select.execute(params);
@@ -123,7 +127,7 @@ public class CassandraDelete extends Delete<CassandraStorageSession> {
                         resultMap.add(row);
                     }
                 } catch (Exception ex){
-                    Log.w(SystemProperties.get(CassandraProperties.CASSADNRA_STORAGE_LAYER_LOG_TAG),
+                    Log.w(SystemProperties.get(CassandraProperties.CASSANDRA_STORAGE_LAYER_LOG_TAG),
                             "Unable to delete row %s", row.toString());
                 }
             }
@@ -131,7 +135,7 @@ public class CassandraDelete extends Delete<CassandraStorageSession> {
             throw new IllegalArgumentException("To delete information you must specify a query or instance to delete");
         }
 
-        if(getResultType() != null) {
+        if(resultCollection != null) {
             resultSet = (R) new CollectionResultSet(resultCollection);
         } else {
             resultSet = (R) new MapResultSet(resultMap);
