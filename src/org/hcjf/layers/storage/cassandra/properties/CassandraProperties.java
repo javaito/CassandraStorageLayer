@@ -8,7 +8,7 @@ import org.hcjf.properties.SystemProperties;
  */
 public class CassandraProperties {
 
-    public static final String CASSADNRA_STORAGE_LAYER_LOG_TAG = "cassandra.storage.layer.log.tag";
+    public static final String CASSANDRA_STORAGE_LAYER_LOG_TAG = "cassandra.storage.layer.log.tag";
     public static final String CASSANDRA_STORAGE_NAMING_IMPL_NAME = "cassandra.storage.naming.impl.resource";
     public static final String CASSANDRA_STORAGE_NAMING_SEPARATOR = "cassandra.storage.naming.separator";
     public static final String CASSANDRA_STORAGE_POOL_CORE_CONNECTION_PER_LOCAL_HOST = "cassandra.storage.pool.core.connection.per.local.host";
@@ -20,7 +20,7 @@ public class CassandraProperties {
     public static final String CASSANDRA_STORAGE_POOL_HEARTBEAT_INTERVAL_SECONDS = "cassandra.storage.pool.heartbeat.interval.seconds";
 
     public static void init(){
-        SystemProperties.putDefaultValue(CASSADNRA_STORAGE_LAYER_LOG_TAG, "CASSANDRA");
+        SystemProperties.putDefaultValue(CASSANDRA_STORAGE_LAYER_LOG_TAG, "CASSANDRA");
         SystemProperties.putDefaultValue(CASSANDRA_STORAGE_NAMING_IMPL_NAME, "cassandraNaming");
         SystemProperties.putDefaultValue(CASSANDRA_STORAGE_NAMING_SEPARATOR, "_");
         SystemProperties.putDefaultValue(CASSANDRA_STORAGE_POOL_CORE_CONNECTION_PER_LOCAL_HOST, "4");
