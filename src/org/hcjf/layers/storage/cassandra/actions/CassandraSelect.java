@@ -127,15 +127,18 @@ public class CassandraSelect<C extends CassandraStorageSession> extends Select<C
             cqlStatement.append(String.format(SELECT_WHERE_STATEMENT, cqlWhereStatement.toString()));
         }
 
-        if(query.getLimit() != null) {
-            if(query.getStart() != null){
-                cqlStatement.append(String.format(SELECT_LIMIT_STATEMENT, Integer.toString(query.getStart() + query.getLimit())));
-            } else {
-                cqlStatement.append(String.format(SELECT_LIMIT_STATEMENT, query.getLimit().toString()));
+        Query reducedCopy = query.reduce(evaluatorsByName.values());
+
+        if(reducedCopy.getEvaluators().isEmpty()) {
+            if (query.getLimit() != null) {
+                if (query.getStart() != null) {
+                    cqlStatement.append(String.format(SELECT_LIMIT_STATEMENT, Integer.toString(query.getStart() + query.getLimit())));
+                } else {
+                    cqlStatement.append(String.format(SELECT_LIMIT_STATEMENT, query.getLimit().toString()));
+                }
             }
         }
 
-        Query reducedCopy = query.reduce(evaluatorsByName.values());
         return getSession().executeQuery(reducedCopy, cqlStatement.toString(), values, getResultType());
     }
 
