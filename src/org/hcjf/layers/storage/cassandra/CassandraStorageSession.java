@@ -74,6 +74,11 @@ public class CassandraStorageSession extends StorageSession {
                 }
             }
 
+            @Override
+            public <R> R resolveFunction(Row o, Query.QueryFunction queryFunction) {
+                return null;
+            }
+
         });
 
         org.hcjf.layers.storage.actions.ResultSet result;
