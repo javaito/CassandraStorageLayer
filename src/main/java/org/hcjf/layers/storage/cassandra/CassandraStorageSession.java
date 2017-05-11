@@ -63,7 +63,7 @@ public class CassandraStorageSession extends StorageSession {
         queryTime = System.currentTimeMillis() - queryTime;
 
         long parsingTime = System.currentTimeMillis();
-        Set<Row> rows = query.evaluate(rawRows, new Query.Consumer<Row>() {
+        Set<Row> rows = query.evaluate(rawRows, new Query.DefaultConsumer<Row>() {
 
             @Override
             public <R> R get(Row row, Query.QueryParameter queryParameter) {
@@ -72,11 +72,6 @@ public class CassandraStorageSession extends StorageSession {
                 } else {
                     throw new UnsupportedOperationException();
                 }
-            }
-
-            @Override
-            public <R> R resolveFunction(Row o, Query.QueryFunction queryFunction) {
-                return null;
             }
 
         });
