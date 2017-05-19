@@ -4,7 +4,6 @@ package org.hcjf.names;
  * This naming consumer transform the camel case format to cassandra and vice versa
  * format all the resources name.
  * @author javaito
- * @mail javaito@gmail.com
  */
 public class CassandraNaming extends NamingConsumer {
 

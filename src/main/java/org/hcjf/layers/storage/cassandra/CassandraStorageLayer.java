@@ -23,7 +23,6 @@ import java.util.List;
 /**
  * This class implements the storage layer to work with cassandra data base.
  * @author javaito
- * @mail javaito@gmail.com
  */
 public abstract class CassandraStorageLayer<S extends CassandraStorageSession> extends StorageLayer<S> {
 

@@ -13,7 +13,6 @@ import java.util.*;
 /**
  * This class implements the select operation for the cassandra storage layer.
  * @author javaito
- * @mail javaito@gmail.com
  */
 public class CassandraSelect<C extends CassandraStorageSession> extends Select<C> {
 
@@ -37,7 +36,7 @@ public class CassandraSelect<C extends CassandraStorageSession> extends Select<C
      * @param params Query parameters.
      * @param <R> Expected result set.
      * @return Result set.
-     * @throws StorageAccessException
+     * @throws StorageAccessException StorageAccessException
      */
     @Override
     public <R extends ResultSet> R execute(Object... params) throws StorageAccessException {

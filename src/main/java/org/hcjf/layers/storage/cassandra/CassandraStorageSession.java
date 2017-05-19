@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 /**
  * This class implements the session for the cassandra storage layer implementation.
  * @author javaito
- * @mail javaito@gmail.com
  */
 public class CassandraStorageSession extends StorageSession {
 
@@ -42,13 +41,13 @@ public class CassandraStorageSession extends StorageSession {
 
     /**
      * This method execute a query
-     * @param query
-     * @param cqlStatement
-     * @param values
-     * @param resultType
-     * @param <R>
-     * @return
-     * @throws StorageAccessException
+     * @param query Query object.
+     * @param cqlStatement Cql statement.
+     * @param values Statement values.
+     * @param resultType Result type.
+     * @param <R> Expected result instance.
+     * @return Result set.
+     * @throws StorageAccessException StorageAccessException
      */
     public <R extends org.hcjf.layers.storage.actions.ResultSet> R executeQuery(
             Query query, String cqlStatement, List<Object> values, Class resultType) throws StorageAccessException {
@@ -152,7 +151,7 @@ public class CassandraStorageSession extends StorageSession {
      * @param resultType Expected result type.
      * @param <R> Expected result set type.
      * @return Storage layer result set instance.
-     * @throws StorageAccessException
+     * @throws StorageAccessException StorageAccessException
      */
     public <R extends org.hcjf.layers.storage.actions.ResultSet> R execute(
             String cqlStatement, List<Object> values, Class resultType) throws StorageAccessException {
@@ -213,7 +212,7 @@ public class CassandraStorageSession extends StorageSession {
      * @param resultType Result type expected
      * @param row Data base row.
      * @return Return an expected instance.
-     * @throws StorageAccessException
+     * @throws StorageAccessException StorageAccessException
      */
     protected Object createInstance(Class resultType, Row row) throws StorageAccessException {
         Object instance;
@@ -252,6 +251,7 @@ public class CassandraStorageSession extends StorageSession {
     /**
      * Create a map from a data base row.
      * @param row Data base row.
+     * @param resourceName Name of the resource.
      * @return Map with all the values.
      */
     protected JoinableMap createRows(Row row, String resourceName) {
@@ -266,13 +266,11 @@ public class CassandraStorageSession extends StorageSession {
      * Closes this stream and releases any system resources associated
      * with it. If the stream is already closed then invoking this
      * method has no effect.
-     * <p>
-     * <p> As noted in {@link AutoCloseable#close()}, cases where the
+     * As noted in {@link AutoCloseable#close()}, cases where the
      * close may fail require careful attention. It is strongly advised
      * to relinquish the underlying resources and to internally
-     * <em>mark</em> the {@code Closeable} as closed, prior to throwing
+     * mark the {@code Closeable} as closed, prior to throwing
      * the {@code IOException}.
-     *
      * @throws IOException if an I/O error occurs
      */
     @Override
@@ -281,6 +279,7 @@ public class CassandraStorageSession extends StorageSession {
 
     /**
      * Verify if the column exist in the resource.
+     * @param resourceName Resource name
      * @param storageColumn Resource of the data base.
      * @return Return true if the column exist and false if the column not exist.
      */
@@ -416,7 +415,7 @@ public class CassandraStorageSession extends StorageSession {
     /**
      * Return the insert implementation for cassandra storage layer.
      * @return Insert implementation.
-     * @throws StorageAccessException
+     * @throws StorageAccessException StorageAccessException
      */
     @Override
     public Insert insert() throws StorageAccessException {
@@ -427,7 +426,7 @@ public class CassandraStorageSession extends StorageSession {
      * Return the insert implementation for cassandra storage layer and set the object to store.
      * @param object Object to store.
      * @return Insert implementation.
-     * @throws StorageAccessException
+     * @throws StorageAccessException StorageAccessException
      */
     @Override
     public Insert insert(Object object) throws StorageAccessException {
@@ -440,7 +439,7 @@ public class CassandraStorageSession extends StorageSession {
      * Return the select implementation for cassandra storage layer.
      * @param query Query to create the select instance.
      * @return Select instance.
-     * @throws StorageAccessException
+     * @throws StorageAccessException StorageAccessException
      */
     @Override
     public Select select(Query query) throws StorageAccessException {
@@ -453,7 +452,7 @@ public class CassandraStorageSession extends StorageSession {
      * Return the delete implementation for cassandra storage layer.
      * @param instance Instance that will be deleted.
      * @return Delete implementation.
-     * @throws StorageAccessException
+     * @throws StorageAccessException StorageAccessException
      */
     @Override
     public Delete delete(Object instance) throws StorageAccessException {
@@ -466,7 +465,7 @@ public class CassandraStorageSession extends StorageSession {
      * Return the delete implementation for cassandra storage layer.
      * @param query Query to filter the delete operation.
      * @return Delete implementation.
-     * @throws StorageAccessException
+     * @throws StorageAccessException StorageAccessException
      */
     @Override
     public Delete delete(Query query) throws StorageAccessException {
@@ -478,7 +477,7 @@ public class CassandraStorageSession extends StorageSession {
     /**
      * Return the delete implementation for cassandra storage layer.
      * @return Delete implementation.
-     * @throws StorageAccessException
+     * @throws StorageAccessException StorageAccessException
      */
     @Override
     public Delete delete() throws StorageAccessException {
@@ -489,7 +488,7 @@ public class CassandraStorageSession extends StorageSession {
     /**
      * Return the update implementation for cassandra storage layer.
      * @return Update implementation.
-     * @throws StorageAccessException
+     * @throws StorageAccessException StorageAccessException
      */
     @Override
     public Update update() throws StorageAccessException {
@@ -501,7 +500,7 @@ public class CassandraStorageSession extends StorageSession {
      * Return the update implementation for cassandra storage layer.
      * @param  instance Instance that will be updated.
      * @return Update implementation.
-     * @throws StorageAccessException
+     * @throws StorageAccessException StorageAccessException
      */
     @Override
     public Update update(Object instance) throws StorageAccessException {
@@ -515,7 +514,7 @@ public class CassandraStorageSession extends StorageSession {
      * @param instance Instance that will be updated.
      * @param values Values to will be updated
      * @return Update implementation.
-     * @throws StorageAccessException
+     * @throws StorageAccessException StorageAccessException
      */
     @Override
     public Update update(Object instance, Map<String, Object> values) throws StorageAccessException {
@@ -531,7 +530,7 @@ public class CassandraStorageSession extends StorageSession {
      * Return the update implementation for cassandra storage layer.
      * @param query Query to filter the update operation.
      * @return Update implementation.
-     * @throws StorageAccessException
+     * @throws StorageAccessException StorageAccessException
      */
     @Override
     public Update update(Query query) throws StorageAccessException {
@@ -545,7 +544,7 @@ public class CassandraStorageSession extends StorageSession {
      * @param query Query to filter the update operation.
      * @param values Values to will be updated
      * @return Update implementation.
-     * @throws StorageAccessException
+     * @throws StorageAccessException StorageAccessException
      */
     @Override
     public Update update(Query query, Map<String, Object> values) throws StorageAccessException {

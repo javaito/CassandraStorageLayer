@@ -4,7 +4,6 @@ import org.hcjf.properties.SystemProperties;
 
 /**
  * @author javaito
- * @email javaito@gmail.com
  */
 public class CassandraProperties {
 

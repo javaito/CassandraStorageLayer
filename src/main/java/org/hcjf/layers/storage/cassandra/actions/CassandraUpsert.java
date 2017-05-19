@@ -4,7 +4,6 @@ import org.hcjf.layers.storage.cassandra.CassandraStorageSession;
 
 /**
  * @author javaito
- * @mail javaito@gmail.com
  */
 public class CassandraUpsert extends CassandraInsert {
 

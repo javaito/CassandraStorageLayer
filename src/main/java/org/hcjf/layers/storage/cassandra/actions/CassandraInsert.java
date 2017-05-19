@@ -13,7 +13,6 @@ import java.util.*;
 /**
  * This class implements the insert operation for cassandra data base.
  * @author javaito
- * @mail javaito@gmail.com
  */
 public class CassandraInsert extends Insert<CassandraStorageSession> {
 
@@ -40,7 +39,7 @@ public class CassandraInsert extends Insert<CassandraStorageSession> {
      * This method create the insert statement for the cassandra data base an execute the statement.
      * @param <R> Expected result set.
      * @return Return the inserted objects.
-     * @throws StorageAccessException
+     * @throws StorageAccessException StorageAccessException
      */
     @Override
     public <R extends ResultSet> R execute(Object... params) throws StorageAccessException {
@@ -75,5 +74,4 @@ public class CassandraInsert extends Insert<CassandraStorageSession> {
 
         return result;
     }
-
 }

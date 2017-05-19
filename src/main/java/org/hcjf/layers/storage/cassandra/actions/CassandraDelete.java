@@ -14,7 +14,6 @@ import java.util.*;
 /**
  * This class implements the delete operation for cassandra.
  * @author javaito
- * @mail javaito@gmail.com
  */
 public class CassandraDelete extends Delete<CassandraStorageSession> {
 
@@ -42,7 +41,7 @@ public class CassandraDelete extends Delete<CassandraStorageSession> {
      * @param params Query parameters
      * @param <R> Expected result set.
      * @return Return the result set with all the rows deleted.
-     * @throws StorageAccessException
+     * @throws StorageAccessException StorageAccessException
      */
     @Override
     public <R extends ResultSet> R execute(Object... params) throws StorageAccessException {

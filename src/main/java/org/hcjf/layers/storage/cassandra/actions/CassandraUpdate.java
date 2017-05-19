@@ -16,7 +16,6 @@ import java.util.Map;
 /**
  * This class implements the update operation for cassandra.
  * @author javaito
- * @mail javaito@gmail.com
  */
 public class CassandraUpdate extends Update<CassandraStorageSession> {
 
@@ -44,7 +43,7 @@ public class CassandraUpdate extends Update<CassandraStorageSession> {
      * @param params Query parameters
      * @param <R> Expected result set.
      * @return Return the result set with all the rows deleted.
-     * @throws StorageAccessException
+     * @throws StorageAccessException StorageAccessException
      */
     @Override
     public <R extends ResultSet> R execute(Object... params) throws StorageAccessException {
