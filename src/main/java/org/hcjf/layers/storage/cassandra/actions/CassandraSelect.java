@@ -58,7 +58,31 @@ public class CassandraSelect<C extends CassandraStorageSession> extends Select<C
 
         List<Object> values = new ArrayList<>();
         StringBuilder cqlStatement = new StringBuilder();
-        cqlStatement.append(String.format(SELECT_STATEMENT, normalizedResourceName));
+        if(query.getReturnParameters() == null || query.getReturnParameters().isEmpty()) {
+            cqlStatement.append(String.format(SELECT_STATEMENT, normalizedResourceName));
+        } else {
+            cqlStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.SELECT)).append(Strings.WHITE_SPACE);
+            String argumentSeparatorValue = SystemProperties.get(SystemProperties.Query.ReservedWord.ARGUMENT_SEPARATOR);
+            String argumentSeparator = Strings.EMPTY_STRING;
+            Query.QueryComponent normalizedQueryField;
+            for (Query.QueryReturnParameter queryField : query.getReturnParameters()) {
+                cqlStatement.append(argumentSeparator);
+                normalizedQueryField = getSession().normalizeApplicationToDataSource(queryField);
+                cqlStatement.append(normalizedQueryField);
+                if (normalizedQueryField instanceof Query.QueryReturnParameter &&
+                        ((Query.QueryReturnParameter) normalizedQueryField).getAlias() != null &&
+                        !((Query.QueryReturnParameter) normalizedQueryField).getAlias().isEmpty()) {
+                    cqlStatement.append(Strings.WHITE_SPACE);
+                    cqlStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.AS));
+                    cqlStatement.append(Strings.WHITE_SPACE);
+                    cqlStatement.append(((Query.QueryReturnParameter) normalizedQueryField).getAlias());
+                }
+                cqlStatement.append(Strings.WHITE_SPACE);
+                argumentSeparator = argumentSeparatorValue;
+            }
+            cqlStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.FROM)).append(Strings.WHITE_SPACE);
+            cqlStatement.append(normalizedResourceName).append(Strings.WHITE_SPACE);
+        }
 
         Strings.Builder cqlWhereStatement = new Strings.Builder();
         for(String fieldName : evaluatorsByName.keySet()) {
