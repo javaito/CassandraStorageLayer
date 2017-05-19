@@ -314,8 +314,12 @@ public class CassandraStorageSession extends StorageSession {
      */
     public final List<String> getPartitionKey(String resourceName) {
         List<String> result = new ArrayList<>();
-        TableMetadata metadata = session.getCluster().getMetadata().
+        AbstractTableMetadata metadata = session.getCluster().getMetadata().
                 getKeyspace(layer.getKeySpace()).getTable(resourceName);
+        if(metadata == null) {
+            metadata = session.getCluster().getMetadata().
+                    getKeyspace(layer.getKeySpace()).getMaterializedView(resourceName);
+        }
         result.addAll(metadata.getPartitionKey().stream().map(ColumnMetadata::getName).collect(Collectors.toList()));
         return result;
     }
@@ -327,8 +331,12 @@ public class CassandraStorageSession extends StorageSession {
      */
     public final List<String> getClusteringKey(String resourceName) {
         List<String> result = new ArrayList<>();
-        TableMetadata metadata = session.getCluster().getMetadata().
+        AbstractTableMetadata metadata = session.getCluster().getMetadata().
                 getKeyspace(layer.getKeySpace()).getTable(resourceName);
+        if(metadata == null) {
+            metadata = session.getCluster().getMetadata().
+                    getKeyspace(layer.getKeySpace()).getMaterializedView(resourceName);
+        }
         result.addAll(metadata.getClusteringColumns().stream().map(ColumnMetadata::getName).collect(Collectors.toList()));
         return result;
     }
@@ -342,19 +350,21 @@ public class CassandraStorageSession extends StorageSession {
         List<String> result = new ArrayList<>();
         TableMetadata metadata = session.getCluster().getMetadata().
                 getKeyspace(layer.getKeySpace()).getTable(resourceName);
-        String target;
-        for(IndexMetadata indexMetadata : metadata.getIndexes()) {
-            target = indexMetadata.getTarget();
-            if(target.startsWith(VALUES_INDEX)) {
-                target = target.replace(VALUES_INDEX, Strings.EMPTY_STRING).
-                        replace(Strings.START_GROUP, Strings.EMPTY_STRING).
-                        replace(Strings.END_GROUP, Strings.EMPTY_STRING);
-            } else if(target.startsWith(KEYS_INDEX)) {
-                target = target.replace(KEYS_INDEX, Strings.EMPTY_STRING).
-                        replace(Strings.START_GROUP, Strings.EMPTY_STRING).
-                        replace(Strings.END_GROUP, Strings.EMPTY_STRING);
+        if(metadata != null) {
+            String target;
+            for (IndexMetadata indexMetadata : metadata.getIndexes()) {
+                target = indexMetadata.getTarget();
+                if (target.startsWith(VALUES_INDEX)) {
+                    target = target.replace(VALUES_INDEX, Strings.EMPTY_STRING).
+                            replace(Strings.START_GROUP, Strings.EMPTY_STRING).
+                            replace(Strings.END_GROUP, Strings.EMPTY_STRING);
+                } else if (target.startsWith(KEYS_INDEX)) {
+                    target = target.replace(KEYS_INDEX, Strings.EMPTY_STRING).
+                            replace(Strings.START_GROUP, Strings.EMPTY_STRING).
+                            replace(Strings.END_GROUP, Strings.EMPTY_STRING);
+                }
+                result.add(target);
             }
-            result.add(target);
         }
         return result;
     }
