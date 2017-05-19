@@ -62,7 +62,11 @@ public class CassandraSelect<C extends CassandraStorageSession> extends Select<C
 
         Strings.Builder cqlWhereStatement = new Strings.Builder();
         for(String fieldName : evaluatorsByName.keySet()) {
-            Class<Evaluator> evaluatorClass = (Class<Evaluator>) evaluatorsByName.get(fieldName).getClass();
+
+            Evaluator evaluator = evaluatorsByName.get(fieldName);
+            Query.skipEvaluator(evaluator);
+            Class<Evaluator> evaluatorClass = (Class<Evaluator>) evaluator.getClass();
+
             if(Equals.class.equals(evaluatorClass)) {
                 cqlWhereStatement.append(fieldName).append(Strings.WHITE_SPACE);
                 cqlWhereStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.EQUALS));
