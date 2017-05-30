@@ -1,11 +1,14 @@
 package org.hcjf.layers.storage.cassandra.actions;
 
 import org.hcjf.layers.storage.StorageAccessException;
+import org.hcjf.layers.storage.StorageLayer;
 import org.hcjf.layers.storage.actions.Insert;
 import org.hcjf.layers.storage.actions.ResultSet;
 import org.hcjf.layers.storage.actions.SingleResult;
 import org.hcjf.layers.storage.cassandra.CassandraStorageSession;
+import org.hcjf.log.Log;
 import org.hcjf.properties.SystemProperties;
+import org.hcjf.utils.Introspection;
 import org.hcjf.utils.Strings;
 
 import java.util.*;
@@ -28,6 +31,13 @@ public class CassandraInsert extends Insert<CassandraStorageSession> {
     protected void onAdd(Object object) {
         setResultType(object.getClass());
         setResourceName(object.getClass().getSimpleName());
+        for(Introspection.Getter getter : Introspection.getGetters(object.getClass()).values()) {
+            try {
+                add(getter.getResourceName(), new FieldStorageValue(getter.get(object), getter.getAnnotationsMap()));
+            } catch(Exception ex) {
+                Log.w(StorageLayer.STORAGE_LOG_TAG, "Invoke getter method fail: $s", ex, getter.getResourceName());
+            }
+        }
         addedInstance = object;
     }
 
