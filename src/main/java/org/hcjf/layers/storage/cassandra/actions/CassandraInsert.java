@@ -19,7 +19,7 @@ import java.util.*;
  */
 public class CassandraInsert extends Insert<CassandraStorageSession> {
 
-    private static final String INSERT_STATEMENT = "INSERT INTO %s (%s) VALUES (%s);";
+    private static final String INSERT_STATEMENT = "INSERT INTO %s (%s) VALUES (%s) IF NOT EXISTS;";
 
     private Object addedInstance;
 
@@ -84,4 +84,5 @@ public class CassandraInsert extends Insert<CassandraStorageSession> {
 
         return result;
     }
+
 }
