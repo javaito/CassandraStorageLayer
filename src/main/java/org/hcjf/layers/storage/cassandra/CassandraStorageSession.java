@@ -1,6 +1,7 @@
 package org.hcjf.layers.storage.cassandra;
 
 import com.datastax.driver.core.*;
+import com.google.common.collect.Lists;
 import org.hcjf.layers.query.JoinableMap;
 import org.hcjf.layers.query.Query;
 import org.hcjf.layers.storage.StorageAccessException;
@@ -62,31 +63,73 @@ public class CassandraStorageSession extends StorageSession {
         queryTime = System.currentTimeMillis() - queryTime;
 
         long parsingTime = System.currentTimeMillis();
-        Set<Row> rows = query.evaluate(rawRows, new Query.DefaultConsumer<Row>() {
 
-            @Override
-            public <R> R get(Row row, Query.QueryParameter queryParameter) {
-                if(queryParameter instanceof Query.QueryField) {
-                    return (R) row.getObject(normalizeName(((Query.QueryField)queryParameter).getFieldName()));
-                } else {
-                    throw new UnsupportedOperationException();
+        Collection<Row> rows;
+        if(getPostEvaluationStrategy().equals(PostEvaluationStrategy.EVALUATE_RAW_DATA)) {
+            rows = query.evaluate(rawRows, new Query.DefaultConsumer<Row>() {
+
+                @Override
+                public <R> R get(Row row, Query.QueryParameter queryParameter) {
+                    if (queryParameter instanceof Query.QueryField) {
+                        return (R) row.getObject(normalizeName(((Query.QueryField) queryParameter).getFieldName()));
+                    } else {
+                        throw new UnsupportedOperationException();
+                    }
                 }
-            }
 
-        });
+            });
+        } else {
+            rows = rawRows;
+        }
 
         org.hcjf.layers.storage.actions.ResultSet result;
         if(resultType != null) {
             List<Object> instances = new ArrayList<>();
-            for (Row row : rows) {
-                instances.add(createInstance(resultType, row));
+            if(getPostEvaluationStrategy().equals(PostEvaluationStrategy.EVALUATE_PARSED_DATA)) {
+                for (Row row : rows) {
+                    Object rowInstance = createInstance(resultType, row);
+                    instances.addAll(query.evaluate(query1 -> Lists.newArrayList(rowInstance), new Query.DefaultConsumer<Object>() {
+                        @Override
+                        public <R> R get(Object instance, Query.QueryParameter queryParameter) {
+                            if (queryParameter instanceof Query.QueryField) {
+                                try {
+                                    return (R) Introspection.get(instance, ((Query.QueryField) queryParameter).getFieldName());
+                                } catch (Exception ex) {
+                                    throw new UnsupportedOperationException();
+                                }
+                            } else {
+                                throw new UnsupportedOperationException();
+                            }
+                        }
+                    }));
+                }
+            } else {
+                for (Row row : rows) {
+                    instances.add(createInstance(resultType, row));
+                }
             }
 
             result = new CollectionResultSet(instances);
         } else {
             List<Map<String, Object>> resultRows = new ArrayList<>();
-            for(Row row : rows) {
-                resultRows.add(createRows(row, query.getResourceName()));
+            if(getPostEvaluationStrategy().equals(PostEvaluationStrategy.EVALUATE_PARSED_DATA)) {
+                for (Row row : rows) {
+                    Map<String, Object> mapRow = createRows(row, query.getResourceName());
+                    resultRows.addAll(query.evaluate(query1 -> Lists.newArrayList(mapRow), new Query.DefaultConsumer<Map<String, Object>>() {
+                        @Override
+                        public <R> R get(Map<String, Object> instance, Query.QueryParameter queryParameter) {
+                            if (queryParameter instanceof Query.QueryField) {
+                                return (R) instance.get(((Query.QueryField)queryParameter).getFieldName());
+                            } else {
+                                throw new UnsupportedOperationException();
+                            }
+                        }
+                    }));
+                }
+            } else {
+                for (Row row : rows) {
+                    resultRows.add(createRows(row, query.getResourceName()));
+                }
             }
 
             result = new MapResultSet(resultRows);
