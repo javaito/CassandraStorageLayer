@@ -64,20 +64,25 @@ public class CassandraSelect<C extends CassandraStorageSession> extends Select<C
             String argumentSeparatorValue = SystemProperties.get(SystemProperties.Query.ReservedWord.ARGUMENT_SEPARATOR);
             String argumentSeparator = Strings.EMPTY_STRING;
             Query.QueryReturnField queryReturnField;
-            for (Query.QueryReturnParameter queryField : query.getReturnParameters()) {
-                if(queryField instanceof Query.QueryReturnField) {
-                    queryReturnField = (Query.QueryReturnField) queryField;
-                    cqlStatement.append(argumentSeparator);
-                    cqlStatement.append(getSession().normalizeName(queryReturnField.getFieldName()));
-                    if (queryReturnField.getAlias() != null && !queryReturnField.getAlias().isEmpty()) {
+            if(!query.returnAll()) {
+                for (Query.QueryReturnParameter queryField : query.getReturnParameters()) {
+                    if (queryField instanceof Query.QueryReturnField) {
+                        queryReturnField = (Query.QueryReturnField) queryField;
+                        cqlStatement.append(argumentSeparator);
+                        cqlStatement.append(getSession().normalizeName(queryReturnField.getFieldName()));
+                        if (queryReturnField.getAlias() != null && !queryReturnField.getAlias().isEmpty()) {
+                            cqlStatement.append(Strings.WHITE_SPACE);
+                            cqlStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.AS));
+                            cqlStatement.append(Strings.WHITE_SPACE);
+                            cqlStatement.append(getSession().normalizeName(queryReturnField.getAlias()));
+                        }
                         cqlStatement.append(Strings.WHITE_SPACE);
-                        cqlStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.AS));
-                        cqlStatement.append(Strings.WHITE_SPACE);
-                        cqlStatement.append(getSession().normalizeName(queryReturnField.getAlias()));
+                        argumentSeparator = argumentSeparatorValue;
                     }
-                    cqlStatement.append(Strings.WHITE_SPACE);
-                    argumentSeparator = argumentSeparatorValue;
                 }
+            } else {
+                cqlStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.RETURN_ALL));
+                cqlStatement.append(Strings.WHITE_SPACE);
             }
             cqlStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.FROM)).append(Strings.WHITE_SPACE);
             cqlStatement.append(normalizedResourceName).append(Strings.WHITE_SPACE);
