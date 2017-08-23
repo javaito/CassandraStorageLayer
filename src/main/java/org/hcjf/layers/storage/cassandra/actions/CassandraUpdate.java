@@ -56,8 +56,8 @@ public class CassandraUpdate extends Update<CassandraStorageSession> {
         String resourceName = getSession().normalizeName(getResourceName());
 
         //Obtains the partitions keys and clustering keys for the specific resource.
-        List<String> keys = getSession().getPartitionKey(getSession().normalizeName(resourceName));
-        keys.addAll(getSession().getClusteringKey(getSession().normalizeName(resourceName)));
+        List<String> keys = getSession().getPartitionKey(resourceName);
+        keys.addAll(getSession().getClusteringKey(resourceName));
 
         //List of values for all updates
         List<Object> baseValues = new ArrayList<>();

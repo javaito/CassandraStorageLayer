@@ -57,8 +57,8 @@ public class CassandraDelete extends Delete<CassandraStorageSession> {
         }
 
         //Obtains the partitions keys and clustering keys for the specific resource.
-        List<String> keys = getSession().getPartitionKey(getSession().normalizeName(resourceName));
-        keys.addAll(getSession().getClusteringKey(getSession().normalizeName(resourceName)));
+        List<String> keys = getSession().getPartitionKey(resourceName);
+        keys.addAll(getSession().getClusteringKey(resourceName));
 
         //Creates the base statement for all the deletes.
         Strings.Builder whereBuilder = new Strings.Builder();
