@@ -102,6 +102,13 @@ public class CassandraSelect<C extends CassandraStorageSession> extends Select<C
                 cqlWhereStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE),
                         Strings.WHITE_SPACE, SystemProperties.get(SystemProperties.Query.ReservedWord.AND), Strings.WHITE_SPACE);
                 values.add(valuesByName.get(fieldName).get(0));
+            } else if(Like.class.equals(evaluatorClass)) {
+                cqlWhereStatement.append(fieldName).append(Strings.WHITE_SPACE);
+                cqlWhereStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.LIKE));
+                cqlWhereStatement.append(Strings.WHITE_SPACE);
+                cqlWhereStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE),
+                        Strings.WHITE_SPACE, SystemProperties.get(SystemProperties.Query.ReservedWord.AND), Strings.WHITE_SPACE);
+                values.add(valuesByName.get(fieldName).get(0));
             } else if(GreaterThan.class.equals(evaluatorClass)) {
                 cqlWhereStatement.append(fieldName).append(Strings.WHITE_SPACE);
                 cqlWhereStatement.append(SystemProperties.get(SystemProperties.Query.ReservedWord.GREATER_THAN));
@@ -167,7 +174,7 @@ public class CassandraSelect<C extends CassandraStorageSession> extends Select<C
 
         Query reducedCopy = query.reduce(evaluatorsByName.values());
 
-        if(reducedCopy.getEvaluators().isEmpty()) {
+        if(!reducedCopy.hasEvaluators()) {
             if (query.getLimit() != null) {
                 if (query.getStart() != null) {
                     cqlStatement.append(String.format(SELECT_LIMIT_STATEMENT, Integer.toString(query.getStart() + query.getLimit())));
