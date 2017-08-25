@@ -1,10 +1,10 @@
 package org.hcjf.layers.storage.cassandra.actions;
 
+import com.datastax.driver.core.DataType;
 import org.hcjf.layers.storage.StorageAccessException;
 import org.hcjf.layers.storage.actions.*;
 import org.hcjf.layers.storage.cassandra.CassandraStorageSession;
 import org.hcjf.layers.storage.cassandra.properties.CassandraProperties;
-import org.hcjf.layers.storage.values.ConcatenationStorageValue;
 import org.hcjf.log.Log;
 import org.hcjf.properties.SystemProperties;
 import org.hcjf.utils.Introspection;
@@ -66,20 +66,16 @@ public class CassandraUpdate extends Update<CassandraStorageSession> {
         Strings.Builder setBuilder = new Strings.Builder();
 
         String normalizedStorageValueName;
-        String normalizedConcatenationFieldName;
         for(String fieldName : getValues().keySet()) {
             normalizedStorageValueName = getSession().normalizeName(fieldName);
             if(getSession().checkColumn(resourceName, normalizedStorageValueName)) {
-                if(getValues().get(fieldName) instanceof ConcatenationStorageValue) {
-                    normalizedConcatenationFieldName = getSession().normalizeName(((ConcatenationStorageValue)getValues().get(fieldName)).getConcatenationFieldName());
-                    if(getSession().checkColumn(resourceName, normalizedConcatenationFieldName)) {
-                        setBuilder.append(normalizedStorageValueName).append(Strings.ASSIGNATION).append(Strings.WHITE_SPACE);
-                        setBuilder.append(normalizedConcatenationFieldName).append(Strings.WHITE_SPACE);
-                        setBuilder.append(ConcatenationStorageValue.CONCATENATION_SIGN).append(Strings.WHITE_SPACE);
-                        setBuilder.append(getValues().get(fieldName).getValue()).append(Strings.WHITE_SPACE);
-                    }
+                setBuilder.append(normalizedStorageValueName).append(Strings.ASSIGNATION).append(Strings.WHITE_SPACE);
+                if(getSession().getColumnDataType(resourceName, normalizedStorageValueName).equals(DataType.counter())) {
+                    setBuilder.append(normalizedStorageValueName).append(Strings.WHITE_SPACE);
+                    setBuilder.append(SystemProperties.get(SystemProperties.Query.Function.MATH_ADDITION)).append(Strings.WHITE_SPACE);
+                    setBuilder.append(getValues().get(fieldName).getValue(), Strings.ARGUMENT_SEPARATOR, Strings.WHITE_SPACE);
+
                 } else {
-                    setBuilder.append(normalizedStorageValueName).append(Strings.ASSIGNATION).append(Strings.WHITE_SPACE);
                     setBuilder.append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE), Strings.ARGUMENT_SEPARATOR, Strings.WHITE_SPACE);
                     baseValues.add(getSession().checkUpdateValue(getValues().get(fieldName).getValue()));
                 }
