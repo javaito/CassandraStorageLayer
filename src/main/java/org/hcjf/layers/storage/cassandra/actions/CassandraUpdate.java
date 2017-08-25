@@ -1,5 +1,6 @@
 package org.hcjf.layers.storage.cassandra.actions;
 
+import com.datastax.driver.core.DataType;
 import org.hcjf.layers.storage.StorageAccessException;
 import org.hcjf.layers.storage.actions.*;
 import org.hcjf.layers.storage.cassandra.CassandraStorageSession;
@@ -68,9 +69,16 @@ public class CassandraUpdate extends Update<CassandraStorageSession> {
         for(String fieldName : getValues().keySet()) {
             normalizedStorageValueName = getSession().normalizeName(fieldName);
             if(getSession().checkColumn(resourceName, normalizedStorageValueName)) {
-                setBuilder.append(getSession().normalizeName(fieldName)).append(Strings.ASSIGNATION).append(Strings.WHITE_SPACE);
-                setBuilder.append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE), Strings.ARGUMENT_SEPARATOR, Strings.WHITE_SPACE);
-                baseValues.add(getSession().checkUpdateValue(getValues().get(fieldName).getValue()));
+                setBuilder.append(normalizedStorageValueName).append(Strings.ASSIGNATION).append(Strings.WHITE_SPACE);
+                if(getSession().getColumnDataType(resourceName, normalizedStorageValueName).equals(DataType.counter())) {
+                    setBuilder.append(normalizedStorageValueName).append(Strings.WHITE_SPACE);
+                    setBuilder.append(SystemProperties.get(SystemProperties.Query.Function.MATH_ADDITION)).append(Strings.WHITE_SPACE);
+                    setBuilder.append(getValues().get(fieldName).getValue(), Strings.ARGUMENT_SEPARATOR, Strings.WHITE_SPACE);
+
+                } else {
+                    setBuilder.append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE), Strings.ARGUMENT_SEPARATOR, Strings.WHITE_SPACE);
+                    baseValues.add(getSession().checkUpdateValue(getValues().get(fieldName).getValue()));
+                }
             }
         }
 
