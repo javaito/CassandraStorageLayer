@@ -116,11 +116,25 @@ public class CassandraUpdate extends Update<CassandraStorageSession> {
                 //Execute the update statement.
                 getSession().execute(statement, values, getResultType());
 
-                //TODO: return the updateScopeInstance with the new sets: get setters and set the values map
-                resultCollection.add(updateScopeInstance);
             } catch (Exception ex) {
                 Log.w(SystemProperties.get(CassandraProperties.CASSANDRA_STORAGE_LAYER_LOG_TAG),
                         "Unable to update instance %s", updateScopeInstance.toString());
+            }
+            try {
+                //Complete updateScopeInstance with the new sets to return the modified object
+                Map<String, Introspection.Setter> instanceSetters = Introspection.getSetters(updateScopeInstance.getClass());
+                for(String fieldName : getValues().keySet()) {
+                    normalizedStorageValueName = getSession().normalizeName(fieldName);
+                    Introspection.Setter instanceSetter = instanceSetters.get(normalizedStorageValueName);
+                    if(instanceSetter != null) {
+                        instanceSetter.invoke(updateScopeInstance, getValues().get(fieldName).getValue());
+                    }
+                }
+
+                resultCollection.add(updateScopeInstance);
+            } catch (Exception ex) {
+                Log.w(SystemProperties.get(CassandraProperties.CASSANDRA_STORAGE_LAYER_LOG_TAG),
+                        "Unable to complete updated to-return instance %s", updateScopeInstance.toString());
             }
 
         } else {
