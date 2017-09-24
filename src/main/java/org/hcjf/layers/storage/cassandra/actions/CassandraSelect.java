@@ -204,7 +204,7 @@ public class CassandraSelect<C extends CassandraStorageSession> extends Select<C
             Evaluator evaluator = iterator.next();
             if(evaluator instanceof EvaluatorCollection) {
                 exploreQuery(evaluatorsByName, valuesByName, ((EvaluatorCollection)evaluator).getEvaluators(), keys, params);
-            } else {
+            } else if (evaluator instanceof FieldEvaluator) {
                 FieldEvaluator fieldEvaluator = (FieldEvaluator) evaluator;
                 String normalizedFieldName = getSession().normalizeName(((Query.QueryField)fieldEvaluator.getQueryParameter()).getFieldName());
                 if (keys.contains(normalizedFieldName)) {
