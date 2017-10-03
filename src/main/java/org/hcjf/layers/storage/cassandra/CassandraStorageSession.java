@@ -2,6 +2,8 @@ package org.hcjf.layers.storage.cassandra;
 
 import com.datastax.driver.core.*;
 import com.google.common.collect.Lists;
+import org.hcjf.bson.BsonDocument;
+import org.hcjf.bson.BsonEncoder;
 import org.hcjf.layers.query.JoinableMap;
 import org.hcjf.layers.query.Query;
 import org.hcjf.layers.storage.StorageAccessException;
@@ -19,6 +21,7 @@ import org.hcjf.utils.Introspection;
 import org.hcjf.utils.Strings;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -188,6 +191,57 @@ public class CassandraStorageSession extends StorageSession {
     }
 
     /**
+     * Evaluates the data type of each value and transforms it into
+     * its equivalent in cassandra data types
+     * @param values Values to transform.
+     * @return Equivalent value in cassandra data types.
+     */
+    private Object[] checkValuesDataType(List<Object> values) {
+        Object[] result = new Object[values.size()];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = checkValueDataType(values.get(i));
+        }
+        return result;
+    }
+
+    /**
+     * Evaluates the value data type and transforms it into its
+     * equivalent in cassandra data type.
+     * @param value Value to transform.
+     * @return Equivalent value in cassandra data types.
+     */
+    public Object checkValueDataType(Object value) {
+        Object result = value;
+        if(result != null) {
+            if (result.getClass().isEnum()) {
+                result = value.toString();
+            } else if (result.getClass().equals(Class.class)) {
+                result = ((Class) value).getName();
+            } else if (List.class.isAssignableFrom(result.getClass())) {
+                List newList = new ArrayList();
+                for(Object listValue : ((List)result)) {
+                    newList.add(checkValueDataType(listValue));
+                }
+                result = newList;
+            } else if (Set.class.isAssignableFrom(result.getClass())) {
+                Set newSet = new TreeSet();
+                for(Object setValue : ((Set)result)) {
+                    newSet.add(checkValueDataType(setValue));
+                }
+                result = newSet;
+            } else if (Map.class.isAssignableFrom(result.getClass())) {
+                Map newMap = new HashMap();
+                for(Object key : ((Map)result).keySet()) {
+                    newMap.put(checkValueDataType(key), checkValueDataType(((Map)result).get(key)));
+                }
+            } else if(value instanceof BsonDocument) {
+                result = ByteBuffer.wrap(BsonEncoder.encode(((BsonDocument)value)));
+            }
+        }
+        return result;
+    }
+
+    /**
      * Execute the statement over cassandra cluster.
      * @param cqlStatement Cel statement.
      * @param values Statements values.
@@ -202,7 +256,7 @@ public class CassandraStorageSession extends StorageSession {
 
         long totalTime;
         long queryTime = totalTime = System.currentTimeMillis();
-        BoundStatement boundStatement = statement.bind(values.toArray());
+        BoundStatement boundStatement = statement.bind(checkValuesDataType(values));
         com.datastax.driver.core.ResultSet cassandraResultSet =
                 session.execute(boundStatement);
         queryTime = System.currentTimeMillis() - queryTime;
@@ -263,7 +317,7 @@ public class CassandraStorageSession extends StorageSession {
         Introspection.Setter setter;
 
         try {
-            instance = resultType.newInstance();
+            instance = resultType.getConstructor().newInstance();
         } catch (Exception ex) {
             throw new StorageAccessException("Unable to create instance", ex);
         }
@@ -422,37 +476,6 @@ public class CassandraStorageSession extends StorageSession {
                 getKeyspace(layer.getKeySpace()).getTable(resourceName);
         ColumnMetadata columnMetadata = metadata.getColumn(columnName);
         return columnMetadata.getType();
-    }
-
-    /**
-     * This method check if the value to update is compatible with the cassandra
-     * data types.
-     * In the case that the value is a collection or map, this method is recursive.
-     * @param value Value to check.
-     * @return Return the object to be updated.
-     */
-    public final Object checkUpdateValue(Object value) {
-        Object result = value;
-        if(result != null) {
-            if (result.getClass().isEnum()) {
-                result = value.toString();
-            } else if (result.getClass().equals(Class.class)) {
-                result = ((Class) value).getName();
-            } else if (List.class.isAssignableFrom(result.getClass())) {
-                List newList = new ArrayList();
-                for(Object listValue : ((List)result)) {
-                    newList.add(checkUpdateValue(listValue));
-                }
-                result = newList;
-            } else if (Set.class.isAssignableFrom(result.getClass())) {
-                Set newSet = new TreeSet();
-                for(Object setValue : ((Set)result)) {
-                    newSet.add(checkUpdateValue(setValue));
-                }
-                result = newSet;
-            }
-        }
-        return result;
     }
 
     /**

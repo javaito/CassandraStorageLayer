@@ -67,7 +67,7 @@ public class CassandraInsert extends Insert<CassandraStorageSession> {
             if(getSession().checkColumn(normalizedResourceName, normalizedStorageValueName)) {
                 valuesBuilder.append(normalizedStorageValueName, Strings.ARGUMENT_SEPARATOR);
                 valuePlacesBuilder.append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE), Strings.ARGUMENT_SEPARATOR);
-                values.add(getSession().checkUpdateValue(getValues().get(storageValueName).getValue()));
+                values.add(getSession().checkValueDataType(getValues().get(storageValueName).getValue()));
             }
         }
 

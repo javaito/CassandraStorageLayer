@@ -77,7 +77,7 @@ public class CassandraUpdate extends Update<CassandraStorageSession> {
 
                 } else {
                     setBuilder.append(SystemProperties.get(SystemProperties.Query.ReservedWord.REPLACEABLE_VALUE), Strings.ARGUMENT_SEPARATOR, Strings.WHITE_SPACE);
-                    baseValues.add(getSession().checkUpdateValue(getValues().get(fieldName).getValue()));
+                    baseValues.add(getSession().checkValueDataType(getValues().get(fieldName).getValue()));
                 }
             }
         }

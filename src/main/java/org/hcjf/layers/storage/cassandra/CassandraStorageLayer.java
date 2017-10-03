@@ -1,9 +1,6 @@
 package org.hcjf.layers.storage.cassandra;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.HostDistance;
-import com.datastax.driver.core.PoolingOptions;
-import com.datastax.driver.core.Session;
+import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.datastax.driver.core.policies.Policies;
 import com.datastax.driver.core.policies.ReconnectionPolicy;
@@ -86,6 +83,18 @@ public abstract class CassandraStorageLayer<S extends CassandraStorageSession> e
         builder.withLoadBalancingPolicy(getLoadBalancingPolicy());
         builder.withReconnectionPolicy(getReconnectionPolicy());
         builder.withPoolingOptions(poolingOptions);
+
+        QueryOptions queryOptions = new QueryOptions();
+        queryOptions
+                .setDefaultIdempotence(SystemProperties.getBoolean(
+                        CassandraProperties.Query.CASSANDRA_STORAGE_LAYER_QUERY_DEFAULT_IDEMPOTENCE))
+                .setConsistencyLevel(ConsistencyLevel.valueOf(SystemProperties.get(
+                        CassandraProperties.Query.CASSANDRA_STORAGE_LAYER_QUERY_CONSISTENCY_LEVEL)))
+                .setFetchSize(SystemProperties.getInteger(
+                        CassandraProperties.Query.CASSANDRA_STORAGE_LAYER_QUERY_FETCH_SIZE));
+
+        builder.withQueryOptions(queryOptions);
+
         cluster = builder.build();
     }
 
