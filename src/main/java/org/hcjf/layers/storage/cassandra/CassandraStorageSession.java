@@ -382,11 +382,9 @@ public class CassandraStorageSession extends StorageSession {
      */
     public boolean checkColumn(String resourceName, String storageColumn) {
         boolean result = false;
-        KeyspaceMetadata keyspaceMetadata =
-                session.getCluster().getMetadata().getKeyspace(layer.getKeySpace());
-        TableMetadata tableMetadata = keyspaceMetadata.getTable(resourceName);
-        for(ColumnMetadata columnMetadata : tableMetadata.getColumns()) {
-            if(columnMetadata.getName().equals(storageColumn)) {
+        AbstractTableMetadata metadata = getTableMetadata(resourceName);
+        for (ColumnMetadata columnMetadata : metadata.getColumns()) {
+            if (columnMetadata.getName().equals(storageColumn)) {
                 result = true;
                 break;
             }
@@ -410,12 +408,7 @@ public class CassandraStorageSession extends StorageSession {
      */
     public final List<String> getPartitionKey(String resourceName) {
         List<String> result = new ArrayList<>();
-        AbstractTableMetadata metadata = session.getCluster().getMetadata().
-                getKeyspace(layer.getKeySpace()).getTable(resourceName);
-        if(metadata == null) {
-            metadata = session.getCluster().getMetadata().
-                    getKeyspace(layer.getKeySpace()).getMaterializedView(resourceName);
-        }
+        AbstractTableMetadata metadata = getTableMetadata(resourceName);
         result.addAll(metadata.getPartitionKey().stream().map(ColumnMetadata::getName).collect(Collectors.toList()));
         return result;
     }
@@ -427,12 +420,7 @@ public class CassandraStorageSession extends StorageSession {
      */
     public final List<String> getClusteringKey(String resourceName) {
         List<String> result = new ArrayList<>();
-        AbstractTableMetadata metadata = session.getCluster().getMetadata().
-                getKeyspace(layer.getKeySpace()).getTable(resourceName);
-        if(metadata == null) {
-            metadata = session.getCluster().getMetadata().
-                    getKeyspace(layer.getKeySpace()).getMaterializedView(resourceName);
-        }
+        AbstractTableMetadata metadata = getTableMetadata(resourceName);
         result.addAll(metadata.getClusteringColumns().stream().map(ColumnMetadata::getName).collect(Collectors.toList()));
         return result;
     }
@@ -444,11 +432,10 @@ public class CassandraStorageSession extends StorageSession {
      */
     public final List<String> getIndexes(String resourceName) {
         List<String> result = new ArrayList<>();
-        TableMetadata metadata = session.getCluster().getMetadata().
-                getKeyspace(layer.getKeySpace()).getTable(resourceName);
-        if(metadata != null) {
+        AbstractTableMetadata metadata = getTableMetadata(resourceName);
+        if(metadata != null && metadata instanceof TableMetadata) {
             String target;
-            for (IndexMetadata indexMetadata : metadata.getIndexes()) {
+            for (IndexMetadata indexMetadata : ((TableMetadata)metadata).getIndexes()) {
                 target = indexMetadata.getTarget();
                 if (target.startsWith(VALUES_INDEX)) {
                     target = target.replace(VALUES_INDEX, Strings.EMPTY_STRING).
@@ -472,10 +459,24 @@ public class CassandraStorageSession extends StorageSession {
      * @return Column data type.
      */
     public final DataType getColumnDataType(String resourceName, String columnName) {
-        TableMetadata metadata = session.getCluster().getMetadata().
-                getKeyspace(layer.getKeySpace()).getTable(resourceName);
+        AbstractTableMetadata metadata = getTableMetadata(resourceName);
         ColumnMetadata columnMetadata = metadata.getColumn(columnName);
         return columnMetadata.getType();
+    }
+
+    /**
+     * Returns the metadata of the table or materialized view associated to the resource name.
+     * @param resourceName Resource name.
+     * @return Metadata of the resource.
+     */
+    public final AbstractTableMetadata getTableMetadata(String resourceName) {
+        AbstractTableMetadata metadata = session.getCluster().getMetadata().
+                getKeyspace(layer.getKeySpace()).getTable(resourceName);
+        if(metadata == null) {
+            metadata = session.getCluster().getMetadata().
+                    getKeyspace(layer.getKeySpace()).getMaterializedView(resourceName);
+        }
+        return metadata;
     }
 
     /**

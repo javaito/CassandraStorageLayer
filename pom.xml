@@ -7,7 +7,7 @@
     <name>Cassandra Storage Layer</name>
     <groupId>com.github.javaito</groupId>
     <artifactId>hcjf-cassandra-storage-layer</artifactId>
-    <version>1.0.6</version>
+    <version>1.0.7</version>
     <packaging>jar</packaging>
     <description>Holanda Catalina Storage layer implementation for cassandra data base</description>
     <url>https://github.com/javaito/CassandraStorageLayer</url>
